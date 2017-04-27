@@ -22,20 +22,20 @@ def get_role(username):
 def restGet(url):
     completeUrl = prefix + url
     print 'Retrieving:',  completeUrl
-    response = requests.get(completeUrl,auth=('mathi',get_password('mathi')))
+    response = requests.get(completeUrl,auth=('guest',get_password('guest')))
     return response
 def restPost(url,data):
     completeUrl = prefix + url
     print 'Posting:',  completeUrl
-    return requests.post(completeUrl, json = data, auth=('mathi',get_password('mathi')))
+    return requests.post(completeUrl, json = data, auth=('guest',get_password('guest')))
 def restPut(url,data):
     completeUrl = prefix + url
     print 'Putting:',  completeUrl
-    return requests.put(completeUrl, json = data, auth=('mathi',get_password('mathi')))
+    return requests.put(completeUrl, json = data, auth=('guest',get_password('guest')))
 def restDelete(url):
     completeUrl = prefix + url
     print 'Deleting:',  completeUrl
-    return requests.delete(completeUrl,auth=('mathi',get_password('mathi'))) #  headers = {'Content-type': 'application/json'})
+    return requests.delete(completeUrl,auth=('guest',get_password('guest'))) #  headers = {'Content-type': 'application/json'})
 def main():
     # f =  open("credentials_roles.txt")
     # print f.readlines()

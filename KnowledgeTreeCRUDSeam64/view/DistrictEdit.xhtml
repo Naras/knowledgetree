@@ -1,0 +1,202 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="district" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{districtHome.managed ? 'Edit' : 'Add'} District</f:facet>
+
+
+            <s:decorate id="countryIdField" template="layout/edit.xhtml">
+                <ui:define name="label">Country id</ui:define>
+                <h:inputText id="countryId"
+                       disabled="#{districtHome.managed}"
+                      required="true"
+                          size="10"
+                     maxlength="10"
+                         value="#{districtHome.instance.id.countryId}">
+                    <a:support event="onblur" reRender="countryIdField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{districtHome.managed}"
+                      required="true"
+                          size="10"
+                     maxlength="10"
+                         value="#{districtHome.instance.id.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="stateIdField" template="layout/edit.xhtml">
+                <ui:define name="label">State id</ui:define>
+                <h:inputText id="stateId"
+                       disabled="#{districtHome.managed}"
+                      required="true"
+                          size="10"
+                     maxlength="10"
+                         value="#{districtHome.instance.id.stateId}">
+                    <a:support event="onblur" reRender="stateIdField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="30"
+                      maxlength="30"
+                          value="#{districtHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{districtHome.persist}"
+                       disabled="#{!districtHome.wired}"
+                       rendered="#{!districtHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{districtHome.update}"
+                       rendered="#{districtHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{districtHome.remove}"
+                      immediate="true"
+                       rendered="#{districtHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/District.xhtml"
+                rendered="#{districtHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty districtFrom ? 'DistrictList' : districtFrom}.xhtml"
+                rendered="#{!districtHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Addresses">
+        <h:form styleClass="association" id="addressesChildren">
+
+            <h:outputText value="There are no addresses associated with this district."
+                       rendered="#{empty districtHome.addresses}"/>
+
+            <rich:dataTable value="#{districtHome.addresses}"
+                           var="_address"
+                      rendered="#{not empty districtHome.addresses}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="addressesTable">
+                <rich:column sortBy="#{_address.id}">
+                    <f:facet name="header">Id</f:facet>
+                    <h:outputText value="#{_address.id}"/>
+                </rich:column>
+                <rich:column sortBy="#{_address.area}">
+                    <f:facet name="header">Area</f:facet>
+                    <h:outputText value="#{_address.area}"/>
+                </rich:column>
+                <rich:column sortBy="#{_address.houseNumber}">
+                    <f:facet name="header">House number</f:facet>
+                    <h:outputText value="#{_address.houseNumber}"/>
+                </rich:column>
+                <rich:column sortBy="#{_address.street}">
+                    <f:facet name="header">Street</f:facet>
+                    <h:outputText value="#{_address.street}"/>
+                </rich:column>
+                <rich:column sortBy="#{_address.value}">
+                    <f:facet name="header">Value</f:facet>
+                    <h:outputText value="#{_address.value}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{districtHome.managed}" id="addresses">
+        <div class="actionButtons">
+            <s:button id="addaddress"
+                   value="Add address"
+                    view="/AddressEdit.xhtml"
+             propagation="none">
+                 <f:param name="districtId"
+                         value="#{districtHome.instance.id}"/>
+                 <f:param name="addressFrom" value="District"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="State *" labelClass="required">
+    <div class="association" id="stateParent">
+
+        <h:outputText value="There is no state associated with this district."
+                   rendered="#{districtHome.instance.state == null}"/>
+
+        <rich:dataTable var="_state"
+                   value="#{districtHome.instance.state}"
+                rendered="#{districtHome.instance.state != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="stateTable">
+            <h:column>
+                <f:facet name="header">Country id</f:facet>
+                <h:outputText value="#{_state.id.countryId}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_state.id.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Country id</f:facet>
+                <h:outputText value="#{_state.country.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_state.name}"/>
+            </h:column>
+        </rich:dataTable>
+
+        <div class="actionButtons">
+            <s:button id="#{districtHome.instance.state != null ? 'changeParent' : 'selectParent'}" value="#{districtHome.instance.state != null ? 'Change' : 'Select'} state"
+                       view="/StateList.xhtml">
+                <f:param name="from" value="DistrictEdit"/>
+            </s:button>
+        </div>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

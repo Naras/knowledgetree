@@ -1,0 +1,125 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Work has tag Details</f:facet>
+
+        <s:decorate id="tag" template="layout/display.xhtml">
+            <ui:define name="label">Tag</ui:define>
+            <h:outputText value="#{workHasTagHome.instance.id.tag}"/>
+        </s:decorate>
+        <s:decorate id="work" template="layout/display.xhtml">
+            <ui:define name="label">Work</ui:define>
+            <h:outputText value="#{workHasTagHome.instance.id.work}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/WorkHasTagEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty workHasTagFrom ? 'WorkHasTagList' : workHasTagFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Tagwork</h:panelGroup>
+        </f:facet>
+    <div class="association" id="tagworkParent">
+
+        <h:outputText value="There is no tagwork associated with this workHasTag."
+                   rendered="#{workHasTagHome.instance.tagwork == null}"/>
+
+        <rich:dataTable var="_tagwork"
+                   value="#{workHasTagHome.instance.tagwork}"
+                rendered="#{workHasTagHome.instance.tagwork != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="tagworkTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tagwork.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tagwork.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Tagwork id</f:facet>
+                <h:outputText value="#{_tagwork.tagwork.id}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewtagwork"
+                     value="View"
+                      view="/Tagwork.xhtml">
+                    <f:param name="tagworkId"
+                           value="#{_tagwork.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Work</h:panelGroup>
+        </f:facet>
+    <div class="association" id="workParent">
+
+        <h:outputText value="There is no work associated with this workHasTag."
+                   rendered="#{workHasTagHome.instance.work == null}"/>
+
+        <rich:dataTable var="_work"
+                   value="#{workHasTagHome.instance.work}"
+                rendered="#{workHasTagHome.instance.work != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="workTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_work.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_work.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Title</f:facet>
+                <h:outputText value="#{_work.title}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewwork"
+                     value="View"
+                      view="/Work.xhtml">
+                    <f:param name="workId"
+                           value="#{_work.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

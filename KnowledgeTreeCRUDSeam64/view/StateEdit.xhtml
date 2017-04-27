@@ -1,0 +1,224 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="state" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{stateHome.managed ? 'Edit' : 'Add'} State</f:facet>
+
+
+            <s:decorate id="countryIdField" template="layout/edit.xhtml">
+                <ui:define name="label">Country id</ui:define>
+                <h:inputText id="countryId"
+                       disabled="#{stateHome.managed}"
+                      required="true"
+                          size="10"
+                     maxlength="10"
+                         value="#{stateHome.instance.id.countryId}">
+                    <a:support event="onblur" reRender="countryIdField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{stateHome.managed}"
+                      required="true"
+                          size="10"
+                     maxlength="10"
+                         value="#{stateHome.instance.id.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="100"
+                      maxlength="100"
+                          value="#{stateHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{stateHome.persist}"
+                       disabled="#{!stateHome.wired}"
+                       rendered="#{!stateHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{stateHome.update}"
+                       rendered="#{stateHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{stateHome.remove}"
+                      immediate="true"
+                       rendered="#{stateHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/State.xhtml"
+                rendered="#{stateHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty stateFrom ? 'StateList' : stateFrom}.xhtml"
+                rendered="#{!stateHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Cities">
+        <h:form styleClass="association" id="citiesChildren">
+
+            <h:outputText value="There are no cities associated with this state."
+                       rendered="#{empty stateHome.cities}"/>
+
+            <rich:dataTable value="#{stateHome.cities}"
+                           var="_city"
+                      rendered="#{not empty stateHome.cities}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="citiesTable">
+                <rich:column sortBy="#{_city.id.countryId}">
+                    <f:facet name="header">Country id</f:facet>
+                    <h:outputText value="#{_city.id.countryId}"/>
+                </rich:column>
+                <rich:column sortBy="#{_city.id.id}">
+                    <f:facet name="header">Id</f:facet>
+                    <h:outputText value="#{_city.id.id}"/>
+                </rich:column>
+                <rich:column sortBy="#{_city.id.stateId}">
+                    <f:facet name="header">State id</f:facet>
+                    <h:outputText value="#{_city.id.stateId}"/>
+                </rich:column>
+                <rich:column sortBy="#{_city.name}">
+                    <f:facet name="header">Name</f:facet>
+                    <h:outputText value="#{_city.name}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{stateHome.managed}" id="cities">
+        <div class="actionButtons">
+            <s:button id="addcity"
+                   value="Add city"
+                    view="/CityEdit.xhtml"
+             propagation="none">
+                 <f:param name="stateId"
+                         value="#{stateHome.instance.id}"/>
+                 <f:param name="cityFrom" value="State"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Country *" labelClass="required">
+    <div class="association" id="countryParent">
+
+        <h:outputText value="There is no country associated with this state."
+                   rendered="#{stateHome.instance.country == null}"/>
+
+        <rich:dataTable var="_country"
+                   value="#{stateHome.instance.country}"
+                rendered="#{stateHome.instance.country != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="countryTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_country.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_country.name}"/>
+            </h:column>
+        </rich:dataTable>
+
+        <div class="actionButtons">
+            <s:button id="#{stateHome.instance.country != null ? 'changeParent' : 'selectParent'}" value="#{stateHome.instance.country != null ? 'Change' : 'Select'} country"
+                       view="/CountryList.xhtml">
+                <f:param name="from" value="StateEdit"/>
+            </s:button>
+        </div>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab label="Districts">
+        <h:form styleClass="association" id="districtsChildren">
+
+            <h:outputText value="There are no districts associated with this state."
+                       rendered="#{empty stateHome.districts}"/>
+
+            <rich:dataTable value="#{stateHome.districts}"
+                           var="_district"
+                      rendered="#{not empty stateHome.districts}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="districtsTable">
+                <rich:column sortBy="#{_district.id.countryId}">
+                    <f:facet name="header">Country id</f:facet>
+                    <h:outputText value="#{_district.id.countryId}"/>
+                </rich:column>
+                <rich:column sortBy="#{_district.id.id}">
+                    <f:facet name="header">Id</f:facet>
+                    <h:outputText value="#{_district.id.id}"/>
+                </rich:column>
+                <rich:column sortBy="#{_district.id.stateId}">
+                    <f:facet name="header">State id</f:facet>
+                    <h:outputText value="#{_district.id.stateId}"/>
+                </rich:column>
+                <rich:column sortBy="#{_district.name}">
+                    <f:facet name="header">Name</f:facet>
+                    <h:outputText value="#{_district.name}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{stateHome.managed}" id="districts">
+        <div class="actionButtons">
+            <s:button id="adddistrict"
+                   value="Add district"
+                    view="/DistrictEdit.xhtml"
+             propagation="none">
+                 <f:param name="stateId"
+                         value="#{stateHome.instance.id}"/>
+                 <f:param name="districtFrom" value="State"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

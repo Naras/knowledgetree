@@ -1,0 +1,159 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">City Details</f:facet>
+
+        <s:decorate id="countryId" template="layout/display.xhtml">
+            <ui:define name="label">Country id</ui:define>
+            <h:outputText value="#{cityHome.instance.id.countryId}"/>
+        </s:decorate>
+        <s:decorate id="id" template="layout/display.xhtml">
+            <ui:define name="label">Id</ui:define>
+            <h:outputText value="#{cityHome.instance.id.id}"/>
+        </s:decorate>
+        <s:decorate id="stateId" template="layout/display.xhtml">
+            <ui:define name="label">State id</ui:define>
+            <h:outputText value="#{cityHome.instance.id.stateId}"/>
+        </s:decorate>
+
+        <s:decorate id="name" template="layout/display.xhtml">
+            <ui:define name="label">Name</ui:define>
+            <h:outputText value="#{cityHome.instance.name}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/CityEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty cityFrom ? 'CityList' : cityFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/onetomany.gif" style="vertical-align: middle; padding-right: 4px;"/>Addresses</h:panelGroup>
+        </f:facet>
+    <h:form styleClass="association" id="addressesChildren">
+
+        <h:outputText value="There are no addresses associated with this city."
+                   rendered="#{empty cityHome.addresses}"/>
+
+        <rich:dataTable value="#{cityHome.addresses}"
+                       var="_address"
+                  rendered="#{not empty cityHome.addresses}"
+                rowClasses="rvgRowOne,rvgRowTwo"
+                        id="addressesTable">
+            <rich:column sortBy="#{_address.id}">
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_address.id}"/>
+            </rich:column>
+            <rich:column sortBy="#{_address.area}">
+                <f:facet name="header">Area</f:facet>
+                <h:outputText value="#{_address.area}"/>
+            </rich:column>
+            <rich:column sortBy="#{_address.houseNumber}">
+                <f:facet name="header">House number</f:facet>
+                <h:outputText value="#{_address.houseNumber}"/>
+            </rich:column>
+            <rich:column sortBy="#{_address.street}">
+                <f:facet name="header">Street</f:facet>
+                <h:outputText value="#{_address.street}"/>
+            </rich:column>
+            <rich:column sortBy="#{_address.value}">
+                <f:facet name="header">Value</f:facet>
+                <h:outputText value="#{_address.value}"/>
+            </rich:column>
+            <h:column>
+                <f:facet name="header">Action</f:facet>
+                <s:link id="selectaddress"
+                     value="Select"
+                      view="/Address.xhtml">
+                    <f:param name="addressId"
+                            value="#{_address.id}"/>
+                    <f:param name="addressFrom" value="City"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </h:form>
+
+    <div class="actionButtons">
+        <s:button
+               value="Add address"
+                view="/AddressEdit.xhtml">
+            <f:param name="cityId"
+                    value="#{cityHome.instance.id}"/>
+            <f:param name="addressFrom" value="City"/>
+        </s:button>
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>State</h:panelGroup>
+        </f:facet>
+    <div class="association" id="stateParent">
+
+        <h:outputText value="There is no state associated with this city."
+                   rendered="#{cityHome.instance.state == null}"/>
+
+        <rich:dataTable var="_state"
+                   value="#{cityHome.instance.state}"
+                rendered="#{cityHome.instance.state != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="stateTable">
+            <h:column>
+                <f:facet name="header">Country id</f:facet>
+                <h:outputText value="#{_state.id.countryId}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_state.id.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Country id</f:facet>
+                <h:outputText value="#{_state.country.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_state.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewstate"
+                     value="View"
+                      view="/State.xhtml">
+                    <f:param name="stateCountryId"
+                            value="#{_state.id.countryId}"/>
+                    <f:param name="stateId"
+                            value="#{_state.id.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

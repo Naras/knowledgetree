@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns="http://jboss.com/products/seam/pages"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://jboss.com/products/seam/pages http://jboss.com/products/seam/pages-2.2.xsd"
+      no-conversation-view-id="/AddressList.xhtml"
+      login-required="true">
+
+   <begin-conversation join="true" flush-mode="MANUAL"/>
+
+   <action execute="#{addressHome.wire}"/>
+
+   <param name="addressFrom"/>
+   <param name="addressId" value="#{addressHome.addressId}"/>
+   <param name="cityFrom"/>
+   <param name="cityCountryId" value="#{cityHome.cityId.countryId}"/>
+   <param name="cityId" value="#{cityHome.cityId.id}"/>
+   <param name="cityStateId" value="#{cityHome.cityId.stateId}"/>
+   <param name="stateFrom"/>
+   <param name="stateCountryId" value="#{stateHome.stateId.countryId}"/>
+   <param name="stateId" value="#{stateHome.stateId.id}"/>
+   <param name="countryFrom"/>
+   <param name="countryId" value="#{countryHome.countryId}"/>
+
+
+
+   <param name="districtFrom"/>
+   <param name="districtCountryId" value="#{districtHome.districtId.countryId}"/>
+   <param name="districtId" value="#{districtHome.districtId.id}"/>
+   <param name="districtStateId" value="#{districtHome.districtId.stateId}"/>
+
+   <param name="personFrom"/>
+   <param name="personId" value="#{personHome.personId}"/>
+   <param name="personlifeFrom"/>
+   <param name="personlifeId" value="#{personlifeHome.personlifeId}"/>
+
+
+
+
+   <navigation from-action="#{addressHome.persist}">
+      <rule if-outcome="persisted">
+         <end-conversation/>
+         <redirect view-id="/Address.xhtml"/>
+      </rule>
+   </navigation>
+
+   <navigation from-action="#{addressHome.update}">
+      <rule if-outcome="updated">
+         <end-conversation/>
+         <redirect view-id="/Address.xhtml"/>
+      </rule>
+   </navigation>
+
+   <navigation from-action="#{addressHome.remove}">
+      <rule if-outcome="removed">
+         <end-conversation/>
+         <redirect view-id="/AddressList.xhtml"/>
+      </rule>
+   </navigation>
+
+</page>

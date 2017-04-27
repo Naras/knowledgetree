@@ -1,0 +1,231 @@
+<rich:toolBar
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:rich="http://richfaces.org/rich">
+    <rich:toolBarGroup>
+        <h:outputText value="#{projectName}:"/>
+        <s:link id="menuHomeId" view="/home.xhtml" value="Home" propagation="none"/>
+    </rich:toolBarGroup>
+    <rich:dropDownMenu showDelay="250" hideDelay="0" submitMode="none">
+        <f:facet name="label">Browse data</f:facet>
+	<rich:menuItem>
+    	<s:link view="/TagsubjectList.xhtml"
+           	value="Tagsubject List"
+           	id="TagsubjectId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkHasTagList.xhtml"
+           	value="WorkHasTag List"
+           	id="WorkHasTagId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkInScriptList.xhtml"
+           	value="WorkInScript List"
+           	id="WorkInScriptId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/PersonHasAffiliationList.xhtml"
+           	value="PersonHasAffiliation List"
+           	id="PersonHasAffiliationId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkInLanguageList.xhtml"
+           	value="WorkInLanguage List"
+           	id="WorkInLanguageId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/PersonlifeList.xhtml"
+           	value="Personlife List"
+           	id="PersonlifeId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/TagList.xhtml"
+           	value="Tag List"
+           	id="TagId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/PersonHasRoleList.xhtml"
+           	value="PersonHasRole List"
+           	id="PersonHasRoleId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/RoleList.xhtml"
+           	value="Role List"
+           	id="RoleId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/ScriptList.xhtml"
+           	value="Script List"
+           	id="ScriptId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/AffiliationList.xhtml"
+           	value="Affiliation List"
+           	id="AffiliationId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/SubjectList.xhtml"
+           	value="Subject List"
+           	id="SubjectId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/SubjectSubjectRelationList.xhtml"
+           	value="SubjectSubjectRelation List"
+           	id="SubjectSubjectRelationId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/ViewSubjectWorkList.xhtml"
+           	value="ViewSubjectWork List"
+           	id="ViewSubjectWorkId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/StateList.xhtml"
+           	value="State List"
+           	id="StateId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkSubjectRelationList.xhtml"
+           	value="WorkSubjectRelation List"
+           	id="WorkSubjectRelationId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/DistrictList.xhtml"
+           	value="District List"
+           	id="DistrictId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/AddressList.xhtml"
+           	value="Address List"
+           	id="AddressId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/SubjectRelatestoSubjectList.xhtml"
+           	value="SubjectRelatestoSubject List"
+           	id="SubjectRelatestoSubjectId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/SubjectHasTagList.xhtml"
+           	value="SubjectHasTag List"
+           	id="SubjectHasTagId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/ViewSubjectSubjectList.xhtml"
+           	value="ViewSubjectSubject List"
+           	id="ViewSubjectSubjectId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/CityList.xhtml"
+           	value="City List"
+           	id="CityId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/PersonList.xhtml"
+           	value="Person List"
+           	id="PersonId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/SubjectHasWorkList.xhtml"
+           	value="SubjectHasWork List"
+           	id="SubjectHasWorkId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkRelatestoWorkList.xhtml"
+           	value="WorkRelatestoWork List"
+           	id="WorkRelatestoWorkId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/CountryList.xhtml"
+           	value="Country List"
+           	id="CountryId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/TagworkList.xhtml"
+           	value="Tagwork List"
+           	id="TagworkId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkWorkRelationList.xhtml"
+           	value="WorkWorkRelation List"
+           	id="WorkWorkRelationId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/LanguageList.xhtml"
+           	value="Language List"
+           	id="LanguageId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+	<rich:menuItem>
+    	<s:link view="/WorkList.xhtml"
+           	value="Work List"
+           	id="WorkId"
+			includePageParams="false"
+     		propagation="none"/>
+     </rich:menuItem>
+    </rich:dropDownMenu>
+    <!-- @newMenuItem@ -->
+    <rich:toolBarGroup location="right">
+        <h:outputText id="menuWelcomeId" value="signed in as: #{credentials.username}" rendered="#{identity.loggedIn}"/>
+        <s:link id="menuLoginId" view="/login.xhtml" value="Login" rendered="#{not identity.loggedIn}" propagation="none"/>
+        <s:link id="menuLogoutId" view="/home.xhtml" action="#{identity.logout}" value="Logout" rendered="#{identity.loggedIn}" propagation="none"/>
+    </rich:toolBarGroup>
+</rich:toolBar>

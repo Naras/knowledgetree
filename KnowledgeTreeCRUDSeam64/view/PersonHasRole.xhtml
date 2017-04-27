@@ -1,0 +1,141 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Person has role Details</f:facet>
+
+        <s:decorate id="person" template="layout/display.xhtml">
+            <ui:define name="label">Person</ui:define>
+            <h:outputText value="#{personHasRoleHome.instance.id.person}"/>
+        </s:decorate>
+        <s:decorate id="role" template="layout/display.xhtml">
+            <ui:define name="label">Role</ui:define>
+            <h:outputText value="#{personHasRoleHome.instance.id.role}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/PersonHasRoleEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty personHasRoleFrom ? 'PersonHasRoleList' : personHasRoleFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Person</h:panelGroup>
+        </f:facet>
+    <div class="association" id="personParent">
+
+        <h:outputText value="There is no person associated with this personHasRole."
+                   rendered="#{personHasRoleHome.instance.person == null}"/>
+
+        <rich:dataTable var="_person"
+                   value="#{personHasRoleHome.instance.person}"
+                rendered="#{personHasRoleHome.instance.person != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="personTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_person.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">First</f:facet>
+                <h:outputText value="#{_person.first}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Initials</f:facet>
+                <h:outputText value="#{_person.initials}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Last</f:facet>
+                <h:outputText value="#{_person.last}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Middle</f:facet>
+                <h:outputText value="#{_person.middle}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Nick</f:facet>
+                <h:outputText value="#{_person.nick}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Other</f:facet>
+                <h:outputText value="#{_person.other}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Personlife id</f:facet>
+                <h:outputText value="#{_person.personlife.id}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewperson"
+                     value="View"
+                      view="/Person.xhtml">
+                    <f:param name="personId"
+                           value="#{_person.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Role</h:panelGroup>
+        </f:facet>
+    <div class="association" id="roleParent">
+
+        <h:outputText value="There is no role associated with this personHasRole."
+                   rendered="#{personHasRoleHome.instance.role == null}"/>
+
+        <rich:dataTable var="_role"
+                   value="#{personHasRoleHome.instance.role}"
+                rendered="#{personHasRoleHome.instance.role != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="roleTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_role.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_role.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewrole"
+                     value="View"
+                      view="/Role.xhtml">
+                    <f:param name="roleId"
+                           value="#{_role.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

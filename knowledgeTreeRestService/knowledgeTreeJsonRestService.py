@@ -40,11 +40,11 @@ def create_relation(subject1,subject2,relation):
         return False
     else:
         try:
-            dict = {'subject1':subject1,'subject2':subject2,'relations':relation}
+            dict = {'subject1':subject1,'subject2':subject2,'relation':relation}
             srsJson.append(dict)
-            srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relations=relation)
+            srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relation=relation)
         except peewee.IntegrityError:
-            print 'Failed to create relation:', dict
+            print('Failed to create relation:', dict)
             return False
     return True
 def delete_relation(subject1,subject2,relation):
@@ -52,7 +52,7 @@ def delete_relation(subject1,subject2,relation):
     for indx in range(len(srsJson)):  # find and remove the entry in Json array
         dict = srsJson[indx] #ast.literal_eval(srsJson[indx])
         # print dict
-        if (dict['subject1'] == subject1) and (dict['subject2'] == subject2) and (dict['relations'] == relation):
+        if (dict['subject1'] == subject1) and (dict['subject2'] == subject2) and (dict['relation'] == relation):
             del srsJson[indx]
             found = True
             break;
@@ -61,23 +61,26 @@ def delete_relation(subject1,subject2,relation):
     #     return False # either of the subjects or relation not valid
     else:
         try:
-            srs = ktm.SubjectRelatestoSubject.get(subject1=subject1,subject2=subject2,relations=relation)
+            srs = ktm.SubjectRelatestoSubject.get(subject1=subject1,subject2=subject2,relation=relation)
             srs.delete_instance()
             return True
         except:
-            print 'Failed to delete relation:' #, dict
+            print('Failed to delete relation:')  #, dict
             return False
 def find_relation(subject1,subject2):
     for dict in srsJson:
+        # dict = item #ast.literal_eval(item)
         if (dict['subject1'] == subject1) and (dict['subject2'] == subject2):
-          return dict['relations']
+          return dict['relation']
     return None
 def find_relations(subject):  # find all relations a subject has with another subject
     relations = []
     for item in srsJson:
         dict = item #ast.literal_eval(item)
         if dict['subject2'] == subject:
-            relations.append({'related': dict['subject1'], 'relations': dict['relations']})
+            dictitem = {'related': dict['subject1'], 'relation': dict['relation']}
+            if 'sortorder' in dict: dictitem['sortorder']=dict['sortorder']
+            relations.append(dictitem)
     return relations
 def find_item_json_dict_list(lst,key,value):
     for dic in lst:
@@ -91,11 +94,36 @@ def entity_json_dict_list(rows):
         jsonElement = '{'
         for fld_name,fld_value in db_flds.items():
             if not fld_value is None:
-                jsonElement += "'" + fld_name + "':'" + fld_value.encode('unicode_escape').replace("'", r'\"') + "',"
+                # print ('name:'+fld_name + ' value:'+fld_value)
+                withoutCRLF = unicode(fld_value).replace('\r\n','')
+                withoutCRLF = unicode(withoutCRLF).replace('\n','')
+                withoutCRLF=unicode(withoutCRLF).replace("'", r'\"')
+                # if fld_name == 'description':
+                #     print(withoutCRLF)
+                jsonElement += "'" + fld_name + "':'" + withoutCRLF + "',"  # escape /r/n
         elem = jsonElement[:-1] + '}'
         # elem = ast.literal_eval(jsonElement2)
+        # print elem
         rowsJson.append(ast.literal_eval(elem))
     return rowsJson
+def move_relation(subject,newparent,newrelation=None):  # moves a subject from one parent to another - the subtree moves
+    relations=find_relations(subject)
+    delete_relation(relations[0]['related'],subject,relations[0]['relation'])
+    if newrelation == None: newrelation = relations[0]['relation']
+    return create_relation(newparent,subject,newrelation)
+def add_name_description(td):
+    dict = find_item_json_dict_list(subjectsJson,'id',td['id'])
+    if not (dict == None):
+        if 'name' in dict: td['name'] = dict['name']
+        if 'description' in dict: td['description'] = dict['description']
+        rel = find_relations(dict['id'])
+        if not (rel==[]):
+            td['relation']=rel[0]['relation']
+            if 'sortorder' in rel[0]: td['sortorder']=rel[0]['sortorder']
+        if 'children' in td:
+            for child in td['children']:
+                child = add_name_description(child)
+    return td
 def shutdown_server():
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
@@ -109,8 +137,8 @@ def refreshGraph():
         if 'description' in row: g.node[row['id']]['description'] = row['description']
     for row in srsJson:
         g.add_edge(row['subject1'],row['subject2'])
-        g[row['subject1']][row['subject2']]['relation'] = row['relations']
-    # logging.debug('refreshed nodes and edges from database');
+        g[row['subject1']][row['subject2']]['relation'] = row['relation']
+        if 'sortorder' in row: g[row['subject1']][row['subject2']]['sortorder'] = row['sortorder']
     return g
 def refreshFromdb():
     # logging.debug('refresh subjects and relations from db')
@@ -118,25 +146,6 @@ def refreshFromdb():
     subjectsJson = entity_json_dict_list(subjects)
     srs = ktm.SubjectRelatestoSubject.select()
     srsJson = entity_json_dict_list(srs)
-def add_name_description(td):
-    dict = find_item_json_dict_list(subjectsJson,'id',td['id'])
-    if not (dict == None):
-        if 'name' in dict: td['name'] = dict['name']
-        if 'description' in dict: td['description'] = dict['description']
-        rel = find_relations(dict['id'])
-        if not (rel==[]):td['relation']=rel[0]['relations']
-        if 'children' in td:
-            for child in td['children']:
-                child = add_name_description(child)
-                # print child
-    return td
-def move_relation(subject,newparent,newrelation=None):  # moves a subject from one parent to another - the subtree moves
-    if subject==newparent: return False
-
-    relations=find_relations(subject)
-    delete_relation(relations[0]['related'],subject,relations[0]['relations'])
-    if newrelation == None: newrelation = relations[0]['relations']
-    return create_relation(newparent,subject,newrelation)
 logging.basicConfig(filename='knowledgeTreeJournal.log',format='%(asctime)s %(message)s',level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -162,16 +171,23 @@ srsJson = entity_json_dict_list(srs)
 logging.debug('populated Subjects, SubjectSubjectRelation & Subject-Relates-to-Subject arrays')
 g = refreshGraph();
 
+endpoint_prefix = '/knowledgeTree/api/v1.0/'
+
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
+@app.route('/knowledgeTree')
+def hello_world():
+  return 'Hello from knowledgeTreeJsonRestService!'
+
 #  --------------------  all features allowed for normal users(view subjects and relations) below -----------------------------
-@app.route('/knowledgeTree/api/v1.0/subjects', methods=['GET'])
+@app.route(endpoint_prefix + 'subjects', methods=['GET'])
 @auth.login_required
 def get_subjects():
     logging.debug(auth.username() + ':servicing JSON GET All subjects')
     return jsonify({'subjects': subjectsJson})
-@app.route('/knowledgeTree/api/v1.0/subject/<string:sub_id>', methods=['GET'])
+@app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['GET'])
 @auth.login_required
 def get_subject(sub_id):
     # sub = [sub for sub in subjectsJson if sub['id'] == str(sub_id)]
@@ -181,17 +197,17 @@ def get_subject(sub_id):
         logging.error('JSON GET id missing: ' + sub_id)
         abort(404)
     return jsonify({'subject': sub})
-@app.route('/knowledgeTree/api/v1.0/subject-subject-relations', methods=['GET'])
+@app.route(endpoint_prefix + 'subject-subject-relations', methods=['GET'])
 @auth.login_required
 def get_subject_subject_relations():
     logging.debug(auth.username() + ':servicing JSON GET All subject-subject-relations')
     return jsonify({'relations': ssrJson})
-@app.route('/knowledgeTree/api/v1.0/subject-to-subject', methods=['GET'])
+@app.route(endpoint_prefix + 'subject-to-subject', methods=['GET'])
 @auth.login_required
 def get_subject_relates_subject():
     logging.debug(auth.username() + ':servicing JSON GET All subject-relates-to-subject')
     return jsonify({'subject-to-subject': srsJson})
-@app.route('/knowledgeTree/api/v1.0/nodes-edges', methods=['GET'])
+@app.route(endpoint_prefix + 'nodes-edges', methods=['GET'])
 @auth.login_required
 def get_nodes_edges():
     logging.debug(auth.username() + ':servicing JSON GET nodes & edges')
@@ -201,7 +217,7 @@ def get_nodes_edges():
     # d = json_graph.node_link_data(g) # node-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(refreshGraph()))
-@app.route('/knowledgeTree/api/v1.0/tree', methods=['GET'])
+@app.route(endpoint_prefix + 'tree', methods=['GET'])
 @auth.login_required
 def get_tree():
     logging.debug(auth.username() + ':servicing JSON GET tree')
@@ -212,18 +228,18 @@ def get_tree():
     # treedata = json_graph.tree_data(t,"aum")
     # write json
     return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),"aum")))
-@app.route('/knowledgeTree/api/v1.0/subtree/<string:sub_id>', methods=['GET'])
+@app.route(endpoint_prefix + 'subtree/<string:sub_id>', methods=['GET'])
 @auth.login_required
 def get_subtree(sub_id):
     logging.debug(auth.username() + ':servicing JSON GET sub-tree')
     refreshFromdb()
     return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),sub_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
-@app.route('/knowledgeTree/api/v1.0/subject-with-relation', methods=['POST'])
+@app.route(endpoint_prefix + 'subject-with-relation', methods=['POST'])
 @auth.login_required
 def create_subject_with_relation():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create subject with relation')
+        logging.debug(auth.username() + ':servicing create subject with relation:'+str(request.json))
         if not request.json or not 'subject' in request.json or not 'related' in request.json or not 'relation' in request.json:
             logging.error('incorrect request:' + str(request.json))
             abort(400)
@@ -243,7 +259,7 @@ def create_subject_with_relation():
             subjectsJson.append(subject2)
         return jsonify({'subject': create_relation(subject1id,subject2['id'],relation)})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject', methods=['POST'])
+@app.route(endpoint_prefix + 'subject', methods=['POST'])
 @auth.login_required
 def create_subject():
     if get_role(auth.username())in ['editor','admin']:
@@ -261,7 +277,7 @@ def create_subject():
             sub = {"id-duplicate": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
             return jsonify({'subject': sub}), 409
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject/<string:sub_id>', methods=['PUT'])
+@app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['PUT'])
 @auth.login_required
 def update_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
@@ -284,7 +300,7 @@ def update_subject(sub_id):
         logging.error('JSON PUT: id missing - ',sub_id)
         abort(404)  # not found
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject-with-relation/<string:sub_id>', methods=['DELETE'])
+@app.route(endpoint_prefix + 'subject-with-relation/<string:sub_id>', methods=['DELETE'])
 @auth.login_required
 def delete_subject_with_relation(sub_id):
     if get_role(auth.username())in ['editor','admin']:
@@ -292,7 +308,7 @@ def delete_subject_with_relation(sub_id):
         relations = find_relations(sub_id)
         for subject_with_relation in relations:
             subject1 = subject_with_relation['related']
-            relation = subject_with_relation['relations']
+            relation = subject_with_relation['relation']
             delete_relation(subject1,sub_id,relation)# each relation with another subject1 removed
         for subj_index in range(len(subjectsJson)): # remove subject from db & Json list
                 subj_as_dict = subjectsJson[subj_index] #ast.literal_eval(subjectsJson[subj_index])
@@ -302,7 +318,7 @@ def delete_subject_with_relation(sub_id):
                     del subjectsJson[subj_index]
                     break
         return jsonify({'result': True})
-@app.route('/knowledgeTree/api/v1.0/subject/<string:sub_id>', methods=['DELETE'])
+@app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['DELETE'])
 @auth.login_required
 def delete_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
@@ -322,7 +338,7 @@ def delete_subject(sub_id):
                 break
         return jsonify({'result': True})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject-to-subject', methods=['POST'])
+@app.route(endpoint_prefix + 'subject-to-subject', methods=['POST'])
 @auth.login_required
 def create_subject_to_subject():
     if get_role(auth.username())in ['editor','admin']:
@@ -332,7 +348,7 @@ def create_subject_to_subject():
             abort(400)
         return jsonify({'result': create_relation(request.json['subject1'],request.json['subject2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject-to-subject', methods=['DELETE'])
+@app.route(endpoint_prefix + 'subject-to-subject', methods=['DELETE'])
 @auth.login_required
 def delete_subject_to_subject():
     if get_role(auth.username())in ['editor','admin']:
@@ -342,7 +358,7 @@ def delete_subject_to_subject():
             abort(400)
         return jsonify({'result': delete_relation(request.json['subject1'],request.json['subject2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/subject-move/<string:sub_id>', methods=['POST'])
+@app.route(endpoint_prefix + 'subject-move/<string:sub_id>', methods=['POST'])
 @auth.login_required
 def move_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
@@ -355,7 +371,7 @@ def move_subject(sub_id):
         else:
             return jsonify({'result': move_relation(sub_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
-@app.route('/knowledgeTree/api/v1.0/shutdown', methods=['POST'])
+@app.route(endpoint_prefix + 'shutdown', methods=['POST'])
 @auth.login_required
 def shutdown():
     if get_role(auth.username())=='admin':

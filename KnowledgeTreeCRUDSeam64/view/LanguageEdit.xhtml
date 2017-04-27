@@ -1,0 +1,139 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="language" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{languageHome.managed ? 'Edit' : 'Add'} Language</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{languageHome.managed}"
+                       required="true"
+                           size="20"
+                      maxlength="20"
+                          value="#{languageHome.instance.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="100"
+                      maxlength="100"
+                          value="#{languageHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="unicodeBlockField" template="layout/edit.xhtml">
+                <ui:define name="label">Unicode block</ui:define>
+                <h:inputText id="unicodeBlock"
+                          value="#{languageHome.instance.unicodeBlock}">
+                    <a:support event="onblur" reRender="unicodeBlockField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{languageHome.persist}"
+                       disabled="#{!languageHome.wired}"
+                       rendered="#{!languageHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{languageHome.update}"
+                       rendered="#{languageHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{languageHome.remove}"
+                      immediate="true"
+                       rendered="#{languageHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Language.xhtml"
+                rendered="#{languageHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty languageFrom ? 'LanguageList' : languageFrom}.xhtml"
+                rendered="#{!languageHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Work in languages">
+        <h:form styleClass="association" id="workInLanguagesChildren">
+
+            <h:outputText value="There are no workInLanguages associated with this language."
+                       rendered="#{empty languageHome.workInLanguages}"/>
+
+            <rich:dataTable value="#{languageHome.workInLanguages}"
+                           var="_workInLanguage"
+                      rendered="#{not empty languageHome.workInLanguages}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workInLanguagesTable">
+                <rich:column sortBy="#{_workInLanguage.id.language}">
+                    <f:facet name="header">Language</f:facet>
+                    <h:outputText value="#{_workInLanguage.id.language}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInLanguage.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_workInLanguage.id.work}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInLanguage.location}">
+                    <f:facet name="header">Location</f:facet>
+                    <h:outputText value="#{_workInLanguage.location}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{languageHome.managed}" id="workInLanguages">
+        <div class="actionButtons">
+            <s:button id="addworkInLanguage"
+                   value="Add workInLanguage"
+                    view="/WorkInLanguageEdit.xhtml"
+             propagation="none">
+                 <f:param name="languageId"
+                         value="#{languageHome.instance.id}"/>
+                 <f:param name="workInLanguageFrom" value="Language"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

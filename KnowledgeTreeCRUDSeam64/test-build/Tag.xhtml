@@ -1,0 +1,133 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Tag Details</f:facet>
+
+        <s:decorate id="id" template="layout/display.xhtml">
+            <ui:define name="label">Id</ui:define>
+            <h:outputText value="#{tagHome.instance.id}"/>
+        </s:decorate>
+
+        <s:decorate id="name" template="layout/display.xhtml">
+            <ui:define name="label">Name</ui:define>
+            <h:outputText value="#{tagHome.instance.name}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/TagEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty tagFrom ? 'TagList' : tagFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Tag</h:panelGroup>
+        </f:facet>
+    <div class="association" id="tagParent">
+
+        <h:outputText value="There is no tag associated with this tag."
+                   rendered="#{tagHome.instance.tag == null}"/>
+
+        <rich:dataTable var="_tag"
+                   value="#{tagHome.instance.tag}"
+                rendered="#{tagHome.instance.tag != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="tagTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tag.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tag.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Tag id</f:facet>
+                <h:outputText value="#{_tag.tag.id}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewtag"
+                     value="View"
+                      view="/Tag.xhtml">
+                    <f:param name="tagId"
+                           value="#{_tag.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/onetomany.gif" style="vertical-align: middle; padding-right: 4px;"/>Tags</h:panelGroup>
+        </f:facet>
+    <h:form styleClass="association" id="tagsChildren">
+
+        <h:outputText value="There are no tags associated with this tag."
+                   rendered="#{empty tagHome.tags}"/>
+
+        <rich:dataTable value="#{tagHome.tags}"
+                       var="_tag"
+                  rendered="#{not empty tagHome.tags}"
+                rowClasses="rvgRowOne,rvgRowTwo"
+                        id="tagsTable">
+            <rich:column sortBy="#{_tag.id}">
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tag.id}"/>
+            </rich:column>
+            <rich:column sortBy="#{_tag.name}">
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tag.name}"/>
+            </rich:column>
+            <h:column>
+                <f:facet name="header">Action</f:facet>
+                <s:link id="selecttag"
+                     value="Select"
+                      view="/Tag.xhtml">
+                    <f:param name="tagId"
+                            value="#{_tag.id}"/>
+                    <f:param name="tagFrom" value="Tag"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </h:form>
+
+    <div class="actionButtons">
+        <s:button
+               value="Add tag"
+                view="/TagEdit.xhtml">
+            <f:param name="tagId"
+                    value="#{tagHome.instance.id}"/>
+            <f:param name="tagFrom" value="Tag"/>
+        </s:button>
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

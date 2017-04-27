@@ -1,0 +1,153 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="viewSubjectSubject" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{viewSubjectSubjectHome.managed ? 'Edit' : 'Add'} View subject subject</f:facet>
+
+
+            <s:decorate id="relationField" template="layout/edit.xhtml">
+                <ui:define name="label">Relation</ui:define>
+                <h:inputText id="relation"
+                       disabled="#{viewSubjectSubjectHome.managed}"
+                      required="true"
+                          size="100"
+                     maxlength="100"
+                         value="#{viewSubjectSubjectHome.instance.id.relation}">
+                    <a:support event="onblur" reRender="relationField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="relationDescriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Relation description</ui:define>
+                <h:inputTextarea id="relationDescription"
+                               cols="80"
+                               rows="10"
+                           disabled="#{viewSubjectSubjectHome.managed}"
+                           required="true"
+                              value="#{viewSubjectSubjectHome.instance.id.relationDescription}"/>
+            </s:decorate>
+
+            <s:decorate id="sub1idField" template="layout/edit.xhtml">
+                <ui:define name="label">Sub1id</ui:define>
+                <h:inputText id="sub1id"
+                       disabled="#{viewSubjectSubjectHome.managed}"
+                      required="true"
+                          size="20"
+                     maxlength="20"
+                         value="#{viewSubjectSubjectHome.instance.id.sub1id}">
+                    <a:support event="onblur" reRender="sub1idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="sub2idField" template="layout/edit.xhtml">
+                <ui:define name="label">Sub2id</ui:define>
+                <h:inputText id="sub2id"
+                       disabled="#{viewSubjectSubjectHome.managed}"
+                      required="true"
+                          size="20"
+                     maxlength="20"
+                         value="#{viewSubjectSubjectHome.instance.id.sub2id}">
+                    <a:support event="onblur" reRender="sub2idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="subject1Field" template="layout/edit.xhtml">
+                <ui:define name="label">Subject1</ui:define>
+                <h:inputText id="subject1"
+                       disabled="#{viewSubjectSubjectHome.managed}"
+                      required="true"
+                          size="30"
+                     maxlength="30"
+                         value="#{viewSubjectSubjectHome.instance.id.subject1}">
+                    <a:support event="onblur" reRender="subject1Field" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="subject1descriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Subject1description</ui:define>
+                <h:inputTextarea id="subject1description"
+                               cols="80"
+                               rows="10"
+                           disabled="#{viewSubjectSubjectHome.managed}"
+                           required="true"
+                              value="#{viewSubjectSubjectHome.instance.id.subject1description}"/>
+            </s:decorate>
+
+            <s:decorate id="subject2Field" template="layout/edit.xhtml">
+                <ui:define name="label">Subject2</ui:define>
+                <h:inputText id="subject2"
+                       disabled="#{viewSubjectSubjectHome.managed}"
+                      required="true"
+                          size="30"
+                     maxlength="30"
+                         value="#{viewSubjectSubjectHome.instance.id.subject2}">
+                    <a:support event="onblur" reRender="subject2Field" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="subject2descriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Subject2description</ui:define>
+                <h:inputTextarea id="subject2description"
+                               cols="80"
+                               rows="10"
+                           disabled="#{viewSubjectSubjectHome.managed}"
+                           required="true"
+                              value="#{viewSubjectSubjectHome.instance.id.subject2description}"/>
+            </s:decorate>
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{viewSubjectSubjectHome.persist}"
+                       disabled="#{!viewSubjectSubjectHome.wired}"
+                       rendered="#{!viewSubjectSubjectHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{viewSubjectSubjectHome.update}"
+                       rendered="#{viewSubjectSubjectHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{viewSubjectSubjectHome.remove}"
+                      immediate="true"
+                       rendered="#{viewSubjectSubjectHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/ViewSubjectSubject.xhtml"
+                rendered="#{viewSubjectSubjectHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty viewSubjectSubjectFrom ? 'ViewSubjectSubjectList' : viewSubjectSubjectFrom}.xhtml"
+                rendered="#{!viewSubjectSubjectHome.managed}"/>
+
+        </div>
+    </h:form>
+
+</ui:define>
+
+</ui:composition>

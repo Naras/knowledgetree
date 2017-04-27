@@ -1,0 +1,170 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="workHasTagSearch" styleClass="edit">
+
+        <rich:simpleTogglePanel label="WorkHasTag Search Filter" switchType="ajax">
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Tag</ui:define>
+                <h:inputText id="tag" value="#{workHasTagList.workHasTag.id.tag}"/>
+            </s:decorate>
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Work</ui:define>
+                <h:inputText id="work" value="#{workHasTagList.workHasTag.id.work}"/>
+            </s:decorate>
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Match</ui:define>
+                <h:selectOneRadio id="logic" value="#{workHasTagList.restrictionLogicOperator}" styleClass="radio">
+                    <f:selectItem itemLabel="All" itemValue="and"/>
+                    <f:selectItem itemLabel="Any" itemValue="or"/>
+                </h:selectOneRadio>
+            </s:decorate>
+
+        </rich:simpleTogglePanel>
+
+        <div class="actionButtons">
+            <h:commandButton id="search" value="Search" action="/WorkHasTagList.xhtml"/>
+            <s:button id="reset" value="Reset" includePageParams="false"/>
+        </div>
+
+    </h:form>
+
+    <rich:panel>
+        <f:facet name="header">WorkHasTag Search Results (#{empty workHasTagList.resultList ? 0 : (workHasTagList.paginated ? workHasTagList.resultCount : workHasTagList.resultList.size)})</f:facet>
+    <div class="results" id="workHasTagList">
+
+    <h:outputText value="The workHasTag search returned no results."
+               rendered="#{empty workHasTagList.resultList}"/>
+
+    <rich:dataTable id="workHasTagList"
+                var="_workHasTag"
+              value="#{workHasTagList.resultList}"
+           rendered="#{not empty workHasTagList.resultList}">
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{workHasTagList}"/>
+                    <ui:param name="propertyLabel" value="Tag"/>
+                    <ui:param name="propertyPath" value="workHasTag.id.tag"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_workHasTag.id.tag}"/>
+        </h:column>
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{workHasTagList}"/>
+                    <ui:param name="propertyLabel" value="Work"/>
+                    <ui:param name="propertyPath" value="workHasTag.id.work"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_workHasTag.id.work}"/>
+        </h:column>
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{workHasTagList}"/>
+                    <ui:param name="propertyLabel" value="Tagwork id"/>
+                    <ui:param name="propertyPath" value="workHasTag.tagwork.id"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_workHasTag.tagwork.id}"/>
+        </h:column>
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{workHasTagList}"/>
+                    <ui:param name="propertyLabel" value="Work id"/>
+                    <ui:param name="propertyPath" value="workHasTag.work.id"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_workHasTag.work.id}"/>
+        </h:column>
+        <rich:column styleClass="action">
+            <f:facet name="header">Action</f:facet>
+            <s:link view="/#{empty from ? 'WorkHasTag' : from}.xhtml"
+                   value="#{empty from ? 'View' : 'Select'}"
+             propagation="#{empty from ? 'none' : 'default'}"
+                      id="workHasTagViewId">
+                <f:param name="workHasTagTag"
+                        value="#{_workHasTag.id.tag}"/>
+                <f:param name="workHasTagWork"
+                        value="#{_workHasTag.id.work}"/>
+            </s:link>
+            #{' '}
+            <s:link view="/WorkHasTagEdit.xhtml"
+                   value="Edit"
+             propagation="none"
+                      id="workHasTagEdit"
+                rendered="#{empty from}">
+                <f:param name="workHasTagTag"
+                        value="#{_workHasTag.id.tag}"/>
+                <f:param name="workHasTagWork"
+                        value="#{_workHasTag.id.work}"/>
+            </s:link>
+        </rich:column>
+    </rich:dataTable>
+
+    </div>
+    </rich:panel>
+
+    <div class="tableControl">
+
+        <s:link view="/WorkHasTagList.xhtml"
+            rendered="#{workHasTagList.previousExists}"
+               value="#{messages.left}#{messages.left} First Page"
+                  id="firstPage">
+          <f:param name="firstResult" value="0"/>
+        </s:link>
+
+        <s:link view="/WorkHasTagList.xhtml"
+            rendered="#{workHasTagList.previousExists}"
+               value="#{messages.left} Previous Page"
+                  id="previousPage">
+            <f:param name="firstResult"
+                    value="#{workHasTagList.previousFirstResult}"/>
+        </s:link>
+
+        <s:link view="/WorkHasTagList.xhtml"
+            rendered="#{workHasTagList.nextExists}"
+               value="Next Page #{messages.right}"
+                  id="nextPage">
+            <f:param name="firstResult"
+                    value="#{workHasTagList.nextFirstResult}"/>
+        </s:link>
+
+        <s:link view="/WorkHasTagList.xhtml"
+            rendered="#{workHasTagList.nextExists}"
+               value="Last Page #{messages.right}#{messages.right}"
+                  id="lastPage">
+            <f:param name="firstResult"
+                    value="#{workHasTagList.lastFirstResult}"/>
+        </s:link>
+
+    </div>
+
+    <s:div styleClass="actionButtons" rendered="#{empty from}">
+        <s:button view="/WorkHasTagEdit.xhtml"
+                    id="create"
+           propagation="none"
+                 value="Create workHasTag">
+            <f:param name="workHasTagTag"/>
+            <f:param name="workHasTagWork"/>
+        </s:button>
+    </s:div>
+
+</ui:define>
+
+</ui:composition>

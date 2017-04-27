@@ -1,7 +1,34 @@
 from peewee import *
+import json
+# import logging
+# import socket
+# logging.basicConfig(filename='knowledgeTreeDBJournal.log',format='%(asctime)s %(message)s',level=logging.DEBUG)
 
-database = MySQLDatabase('knowledgetree', **{'user': 'root', 'password': 'root123'})
-# database = MySQLDatabase('knowledgetree', host='freedbinstance.cmi50o02mh1u.us-west-2.rds.amazonaws.com', port=3306, user = 'narasmg', password='Master01')
+def get_username():
+    dbcredentials = json.load(open("db_credentials.txt"))
+    if 'user' in dbcredentials:
+        return dbcredentials['user']
+    return None
+def get_password():
+    dbcredentials = json.load(open("db_credentials.txt"))
+    if 'user' in dbcredentials:
+        return dbcredentials['password']
+    return None
+def get_dbhost():
+    try:
+        # socket.gethostbyname(socket.gethostname())
+        hosturl = file('database_url.txt').read()
+        return hosturl
+    except:
+        return None
+
+database_url = get_dbhost()
+if database_url==None:
+    # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
+    database = MySQLDatabase('knowledgetree', **{'user': get_username(), 'password': get_password()})
+else:
+    # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
+    database = MySQLDatabase('knowledgetree', host=database_url, port=3306, user = get_username(), password=get_password())
 
 class UnknownField(object):
     pass
@@ -55,10 +82,12 @@ class SubjectSubjectRelation(BaseModel):
         db_table = 'subject_subject_relation'
 
 class SubjectRelatestoSubject(BaseModel):
-    relations = ForeignKeyField(db_column='Relations_id', null=True, rel_model=SubjectSubjectRelation, related_name='subject_subject_relation_relations_set', to_field='id')
-    subject1 = ForeignKeyField(db_column='Subject1', rel_model=Subject, related_name='subject_subject1_set', to_field='id')
+    subject1 = ForeignKeyField(db_column='Subject1', rel_model=Subject, to_field='id')
     subject2 = ForeignKeyField(db_column='Subject2', rel_model=Subject, related_name='subject_subject2_set', to_field='id')
+    relation = ForeignKeyField(db_column='relation_id', null=True, rel_model=SubjectSubjectRelation, to_field='id')
+    sortorder = IntegerField(null=True)
 
     class Meta:
         db_table = 'subject_relatesto_subject'
         primary_key = CompositeKey('subject1', 'subject2')
+

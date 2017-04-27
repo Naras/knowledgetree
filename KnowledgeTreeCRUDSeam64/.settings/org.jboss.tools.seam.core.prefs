@@ -1,0 +1,16 @@
+#Wed Aug 06 19:35:32 BST 2008
+action.package=org.srvvp.knowledgetree.session
+action.sources=/KnowledgeTreeCRUDSeam64/src/hot
+eclipse.preferences.version=1
+model.package=org.srvvp.knowledgetree.entity
+model.sources=/KnowledgeTreeCRUDSeam64/src/main
+seam.ejb.project=KnowledgeTreeCRUDSeam64
+seam.project.connection.profile=
+seam.project.deployment.type=ear
+seam.project.settings.version=1.1
+seam.project.web.root.folder=/KnowledgeTreeCRUDSeam64/view
+seam.runtime.name=
+seam.test.creating=true
+seam.test.project=KnowledgeTreeCRUDSeam64
+test.package=org.srvvp.knowledgetree.test
+test.sources=/KnowledgeTreeCRUDSeam64/src/test

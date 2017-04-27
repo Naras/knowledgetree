@@ -1,0 +1,130 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Work in script Details</f:facet>
+
+        <s:decorate id="script" template="layout/display.xhtml">
+            <ui:define name="label">Script</ui:define>
+            <h:outputText value="#{workInScriptHome.instance.id.script}"/>
+        </s:decorate>
+        <s:decorate id="work" template="layout/display.xhtml">
+            <ui:define name="label">Work</ui:define>
+            <h:outputText value="#{workInScriptHome.instance.id.work}"/>
+        </s:decorate>
+
+        <s:decorate id="location" template="layout/display.xhtml">
+            <ui:define name="label">Location</ui:define>
+            <h:outputText value="#{workInScriptHome.instance.location}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/WorkInScriptEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty workInScriptFrom ? 'WorkInScriptList' : workInScriptFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Script</h:panelGroup>
+        </f:facet>
+    <div class="association" id="scriptParent">
+
+        <h:outputText value="There is no script associated with this workInScript."
+                   rendered="#{workInScriptHome.instance.script == null}"/>
+
+        <rich:dataTable var="_script"
+                   value="#{workInScriptHome.instance.script}"
+                rendered="#{workInScriptHome.instance.script != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="scriptTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_script.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_script.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Unicode block</f:facet>
+                <h:outputText value="#{_script.unicodeBlock}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewscript"
+                     value="View"
+                      view="/Script.xhtml">
+                    <f:param name="scriptId"
+                           value="#{_script.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Work</h:panelGroup>
+        </f:facet>
+    <div class="association" id="workParent">
+
+        <h:outputText value="There is no work associated with this workInScript."
+                   rendered="#{workInScriptHome.instance.work == null}"/>
+
+        <rich:dataTable var="_work"
+                   value="#{workInScriptHome.instance.work}"
+                rendered="#{workInScriptHome.instance.work != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="workTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_work.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_work.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Title</f:facet>
+                <h:outputText value="#{_work.title}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewwork"
+                     value="View"
+                      view="/Work.xhtml">
+                    <f:param name="workId"
+                           value="#{_work.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>
