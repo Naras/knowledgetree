@@ -70,7 +70,18 @@
             <!--<input type="checkbox" id="orientation" name="orientation" checked="checked"> Display/Landscape (uncheck for Display/Portrait)-->
         </div>
         <input type="button" id="btnQueryString" value="Login" />
-
+        <!-- not a submit button with action at a server. Parameters are to be passed to next form in a function below  -->
+        <script>
+            // set Login click as action when enter key pressed
+            $(document).keypress(function(e) {
+                var key = e.which;
+                if (key == 13) // the enter key code
+                {
+                    $('input[id = btnQueryString]').click();
+                    return false;
+                }
+            });
+        </script>
         <script type="text/javascript">
             "use strict";
             $(function() {
@@ -88,16 +99,13 @@
                     var nam = encodeURIComponent($("#uname").val());
                     // var orientation = encodeURIComponent($("#orientation").val());
                     var landingpage = "webUITree/index.html" //"KnowledgeTree.html"
-                        /*                    d3.csv("restServiceUrl.csv").get(function(err, content) {
-                                                if (err) {
-                                                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + "&orientation=" + orientation;
-                                                    window.location.href = url;
-                                                } else {
-                                                    console.log("userip ", content[0]["IpAddress"]);*/
-                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + content[0]["IpAddress"]; // + "&orientation=" + orientation;
-                    window.location.href = url;
-                    /*}
-                    });*/
+                        // var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + content[0]["IpAddress"]; // + "&orientation=" + orientation;
+                    d3.csv("restServiceUrl.csv", function(content) {
+                        // IpAddress = content[0]["IpAddress"];
+                        console.log("userip ", content[0]["IpAddress"]);
+                        var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + content[0]["IpAddress"];
+                        window.location.href = url;
+                    });
                 });
             });
         </script>

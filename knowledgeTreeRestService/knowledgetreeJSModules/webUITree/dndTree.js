@@ -56,26 +56,30 @@ function create_node() {
             create_node_parent.children = [];
         }
         id = $('#CreateNodeId').val();
+        sortorder = $('#CreateNodeOrder').val();
         name = $('#CreateNodeName').val();
         relation = $('#CreateNodeRelation').val();
         description = $('#CreateNodeDescription').val().replace(/(\r\n|\n|\r)/gm, "\r\n")
         new_node = {
             'name': name,
             'id': id,
+            'sortorder': sortorder,
             'description': description,
             'relation': relation,
             'depth': create_node_parent.depth + 1,
             'children': [],
             '_children': null
         };
-        console.log('Created Node: ' + id);
         create_node_parent.children.push(new_node);
         create_node_modal_active = false;
         $('#CreateNodeId').val('');
         $('#CreateNodeName').val('');
         $('#CreateNodeDescription').val('');
+        // $('#RenameNodeOrder').val(sortorder);
+        $('#CreateNodeOrder').val('');
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
+        console.log('Created Node: ' + id);
         d3.xhr(url + "subject-with-relation")
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
@@ -83,7 +87,8 @@ function create_node() {
                 JSON.stringify({
                     "subject": { "id": new_node.id, "name": new_node.name, "description": new_node.description },
                     "related": create_node_parent.id,
-                    "relation": new_node.relation
+                    "relation": new_node.relation,
+                    "sortorder": new_node.sortorder
                 }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
@@ -105,6 +110,8 @@ function rename_node() {
         $('#RenameNodeId').disabled = true;
         node_to_rename.id = $('#RenameNodeId').val();
         node_to_rename.name = $('#RenameNodeName').val();
+        node_to_rename.relation = $('#RenameNodeRelation').val();
+        node_to_rename.sortorder = $('#RenameNodeOrder').val();
         node_to_rename.description = $('#RenameNodeDescription').val();
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
@@ -114,7 +121,9 @@ function rename_node() {
             .send("PUT",
                 JSON.stringify({
                     "name": node_to_rename.name,
-                    "description": node_to_rename.description
+                    "description": node_to_rename.description,
+                    "relation": node_to_rename.relation,
+                    "sortorder": node_to_rename.sortorder
                 }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
@@ -199,6 +208,7 @@ function draw_tree(error, treeData) {
             action: function(elm, d, i) {
                 $("#ViewNodeId").val(d.id);
                 $("#ViewNodeName").val(d.name);
+                $("#ViewNodeOrder").val(d.sortorder);
                 $("#ViewNodeDescription").val(d.description);
                 $("#ViewNodeRelation").val(d.relation);
                 view_node_modal_active = true;
@@ -223,6 +233,7 @@ function draw_tree(error, treeData) {
                 $("#RenameNodeName").val(d.name);
                 $("#RenameNodeDescription").val(d.description);
                 $("#RenameNodeRelation").val(d.relation);
+                $("#RenameNodeOrder").val(d.sortorder);
                 rename_node_modal_active = true;
                 node_to_rename = d;
                 $("#RenameNodeName").focus();
