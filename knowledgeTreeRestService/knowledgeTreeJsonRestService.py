@@ -5,6 +5,7 @@ import json, ast, logging, peewee
 import flask_httpauth
 import networkx as nx
 from networkx.readwrite import json_graph
+import random, string
 
 auth = flask_httpauth.HTTPBasicAuth()
 def ceasar(plain,shift):  # shift each letter by shift
@@ -29,7 +30,7 @@ def unauthorized():
 
 # own modules
 import knowledgeTreeModelSmall as ktm
-def create_relation(subject1,subject2,relation):
+def create_relation(subject1,subject2,relation,sortorder=None):
     # for item in srsJson:
     #     dict = ast.literal_eval(item)
     #     if (dict['subject1'] == subject1) and (dict['subject2'] == subject2) and (dict['relations'] == relation): #duplicate relation
@@ -40,11 +41,29 @@ def create_relation(subject1,subject2,relation):
         return False
     else:
         try:
-            dict = {'subject1':subject1,'subject2':subject2,'relation':relation}
+            dict = {'subject1':subject1,'subject2':subject2,'relation':relation,'sortorder':sortorder}
             srsJson.append(dict)
-            srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relation=relation)
+            srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relation=relation,sortorder=sortorder)
         except peewee.IntegrityError:
             print('Failed to create relation:', dict)
+            return False
+    return True
+def update_relation(subject2,relation=None,sortorder=None):
+    subject1 = find_relations(subject2)   # a list of subject1s - usually only one expected
+    subject1 = find_relations(subject2)[0]['related']   # a list of subject1s - usually only one expected
+    if (find_item_json_dict_list(subjectsJson,'id',subject1) is None) or (find_item_json_dict_list(subjectsJson,'id',subject2) is None) \
+            or (find_item_json_dict_list(ssrJson,'id',relation) is None):
+        return False  # either of the subjects or relation not valid
+    else:
+        try:
+            # update the subject relations and sort order on the db
+            replace_relation(subject1,subject2,relation,sortorder)
+            srsNew = ktm.SubjectRelatestoSubject.get(ktm.SubjectRelatestoSubject.subject1==subject1,ktm.SubjectRelatestoSubject.subject2==subject2)
+            if relation is not None:srsNew.relation = relation
+            if sortorder is not None:srsNew.sortorder = sortorder
+            srsNew.save()
+        except peewee.IntegrityError:
+            print('Failed to update relation:', dict)
             return False
     return True
 def delete_relation(subject1,subject2,relation):
@@ -82,6 +101,13 @@ def find_relations(subject):  # find all relations a subject has with another su
             if 'sortorder' in dict: dictitem['sortorder']=dict['sortorder']
             relations.append(dictitem)
     return relations
+def replace_relation(subject1,subject2,relation=None,sortorder=None):
+    for dict in srsJson:
+        if (dict['subject1'] == subject1) and (dict['subject2'] == subject2):
+          if relation is not None: dict['relation'] = relation
+          if sortorder is not None: dict['sortorder'] = sortorder
+          return dict
+    return None
 def find_item_json_dict_list(lst,key,value):
     for dic in lst:
         # print dic, type(dic)
@@ -106,11 +132,11 @@ def entity_json_dict_list(rows):
         # print elem
         rowsJson.append(ast.literal_eval(elem))
     return rowsJson
-def move_relation(subject,newparent,newrelation=None):  # moves a subject from one parent to another - the subtree moves
+def move_relation(subject,newparent,newrelation=None,sortorder=None):  # moves a subject from one parent to another - the subtree moves
     relations=find_relations(subject)
     delete_relation(relations[0]['related'],subject,relations[0]['relation'])
     if newrelation == None: newrelation = relations[0]['relation']
-    return create_relation(newparent,subject,newrelation)
+    return create_relation(newparent,subject,newrelation,sortorder)
 def add_name_description(td):
     dict = find_item_json_dict_list(subjectsJson,'id',td['id'])
     if not (dict == None):
@@ -243,7 +269,8 @@ def create_subject_with_relation():
         if not request.json or not 'subject' in request.json or not 'related' in request.json or not 'relation' in request.json:
             logging.error('incorrect request:' + str(request.json))
             abort(400)
-        dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation']}
+        if 'sortorder' in request.json: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
+        else: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation']}
         subject2 = dict['subject']
         if not 'id' in subject2 or not 'name' in subject2:
             logging.error('incorrect request:' + str(subject2))
@@ -251,13 +278,17 @@ def create_subject_with_relation():
         subject1id = dict['related']
         if dict.has_key('relation'): relation = dict['relation']
         else: relation = None
-        if find_item_json_dict_list(subjectsJson,'id',subject1id) is None:
+        if dict.has_key('sortorder'): sortorder = int(dict['sortorder'])
+        else: sortorder = None
+        if find_item_json_dict_list(subjectsJson,'id',subject1id) is None:  # no subject1
             return None
-        if find_item_json_dict_list(subjectsJson,'id',subject2['id']) is None:
-            subj = subject2 #ast.literal_eval(subject2)
-            ktm.Subject.create(id=subj['id'],name=subj['name'],description=subj['description'])  # db create row
-            subjectsJson.append(subject2)
-        return jsonify({'subject': create_relation(subject1id,subject2['id'],relation)})
+        if find_item_json_dict_list(subjectsJson,'id',subject2['id']) is not None:
+            # duplicate subject2 id .. generate a random id suffix and concatenate
+            subject2['id'] = (subject2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+        # subj = subject2 #ast.literal_eval(subject2)
+        ktm.Subject.create(id=subject2['id'],name=subject2['name'],description=subject2['description'])  # db create row
+        subjectsJson.append(subject2)
+        return jsonify({'subject': create_relation(subject1id,subject2['id'],relation=relation,sortorder=sortorder)})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject', methods=['POST'])
 @auth.login_required
@@ -267,22 +298,24 @@ def create_subject():
         if not request.json or not 'id' in request.json or not 'name' in request.json:
             logging.error('incorrect request:' + str(request.json))
             abort(400)
-        sub = {"id": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
-        if find_item_json_dict_list(subjectsJson,'id',str(request.json['id'])) is None:
+        subject = {"id": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
+        if find_item_json_dict_list(subjectsJson,'id',str(request.json['id'])) is not None:
             # subj = ast.literal_eval(str(sub))
-            ktm.Subject.create(id=sub['id'],name=sub['name'],description=sub['description'])  # db create row
-            subjectsJson.append(sub)
-            return jsonify({'subject': sub}), 201
-        else:
-            sub = {"id-duplicate": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
-            return jsonify({'subject': sub}), 409
+            # generate a random string and concatenate - changes id to unique 20-char string
+            subject['id'] = (subject['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+        ktm.Subject.create(id=subject['id'],name=subject['name'],description=subject['description'])  # db create row
+        subjectsJson.append(subject)
+        return jsonify({'subject': subject}), 201
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['PUT'])
 @auth.login_required
 def update_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
         logging.debug(auth.username() + ':servicing update subject: ' + sub_id)
-        if (not request.json) or ('name' in request.json and type(request.json['name']) != unicode) or ('description' in request.json and type(request.json['description']) is not unicode):
+        if (not request.json) or ('name' in request.json and type(request.json['name']) != unicode) \
+                or ('description' in request.json and type(request.json['description']) is not unicode) \
+                or ('relation' in request.json and type(request.json['relation']) is not unicode) \
+                or ('sortorder' in request.json and type(request.json['sortorder']) is not unicode):
             logging.error('JSON PUT error incorrect request:' + str(request.json))
             abort(400)
         for index in range(len(subjectsJson)):
@@ -296,8 +329,10 @@ def update_subject(sub_id):
                 subj.name = dict['name']
                 subj.description = dict['description']
                 subj.save()
+                if 'relation' in request.json or 'sortorder' in request.json:  # modify subject_to_subject if any change to relation or sort order
+                    update_relation(sub_id,request.json.get('relation', None),int(request.json.get('sortorder', None)))
                 return jsonify({'subject': dict}), 201
-        logging.error('JSON PUT: id missing - ',sub_id)
+        logging.error('JSON PUT: id missing - '+ sub_id)
         abort(404)  # not found
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject-with-relation/<string:sub_id>', methods=['DELETE'])
@@ -322,7 +357,7 @@ def delete_subject_with_relation(sub_id):
 @auth.login_required
 def delete_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + 'servicing delete subject: ' + sub_id)
+        logging.debug(auth.username() + ':servicing delete subject: ' + sub_id)
         sub = find_item_json_dict_list(subjectsJson,'id',sub_id)
         if sub is None or len(sub) == 0:
             logging.error('incorrect request:' + str(request.json))
@@ -367,7 +402,8 @@ def move_subject(sub_id):
             logging.error('JSON POST incorrect request:' + str(request.json))
             abort(400)
         if 'relation' in request.json:
-            return jsonify({'result': move_relation(sub_id,request.json['id'],request.json['relation'])})
+            if 'sortorder' in request.json:return jsonify({'result': move_relation(sub_id,request.json['id'],request.json['relation'],request.json['sortorder'])})
+            else:return jsonify({'result': move_relation(sub_id,request.json['id'],request.json['relation'])})
         else:
             return jsonify({'result': move_relation(sub_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)

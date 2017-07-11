@@ -146,6 +146,7 @@ function move_node() {
         $('#MoveNodeId').disabled = true;
         node_to_move.id = $('#MoveNodeId').val();
         node_to_move.parent = $('#MoveParentNode').val();
+        node_to_move.sortorder = $('#MoveNodeOrder').val();
         // console.log('Moving Node: ' + node_to_move.id + ' To Node: ' + node_to_move.parent);
         $('#MoveParentNodeId').val('');
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
@@ -155,7 +156,8 @@ function move_node() {
             .header("Authorization", "Basic " + btoa(auth))
             .post(
                 JSON.stringify({
-                    "id": node_to_move.parent
+                    "id": node_to_move.parent,
+                    "sortorder": node_to_move.sortorder
                 }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
@@ -166,7 +168,7 @@ function move_node() {
                     }
                 }
             );
-        console.log('Moved Node: ' + node_to_move.id + " Under: " + node_to_move.parent);
+        console.log('Moved Node: ' + node_to_move.id + " Under: " + node_to_move.parent + "order:" + node_to_move.sortorder);
         move_node_modal_active = false;
         close_modal();
         outer_update(node_to_move);
@@ -257,6 +259,7 @@ function draw_tree(error, treeData) {
                     $('#MoveParentList').append("<option value=\"" + allNodes[i] + "\"></option>");
                 }
                 $("#MoveNodeId").val(d.id);
+                $("#MoveNodeOrder").val(d.sortorder);
                 $('#MoveParentNodeId').focus();
                 $('#MoveNodeModal').foundation('reveal', 'open');
             }
@@ -355,7 +358,19 @@ function draw_tree(error, treeData) {
     function sortTree() {
         tree.sort(function(a, b) {
             // return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
-            return b.sortorder < a.sortorder ? 1 : -1;
+            // console.log(typeof(b.sortorder), b.sortorder);
+            var b_order = b.sortorder;
+            if (typeof(b_order) == "string") {
+                if (b_order.length < 2) b_order = "0" + b_order;
+            }
+
+            var a_order = a.sortorder;
+            if (typeof(a_order) == "string") {
+                if (a_order.length < 2) a_order = "0" + a_order;
+            }
+
+            return b_order < a_order ? 1 : -1;
+            // return b.sortorder < a.sortorder ? 1 : -1;
         });
     }
     // Sort the tree initially incase the JSON isn't in a sorted order.
@@ -397,6 +412,27 @@ function draw_tree(error, treeData) {
 
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
     var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+
+    function movenode(node_to_move, theparent) {
+        var auth = getauth();
+        d3.xhr(url + "subject-move/" + node_to_move)
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Basic " + btoa(auth))
+            .post(
+                JSON.stringify({
+                    "id": theparent
+                }),
+                function(err, rawdata) {
+                    if (err) console.log("error:", err)
+                    else {
+                        try {
+                            console.log("response:", rawdata.response, "status:", rawdata.status);
+                        } catch (error) { console.log("error:", err, "response:", rawdata) };
+                    }
+                }
+            );
+        console.log('Moved Node: ' + node_to_move + " Under: " + theparent);
+    }
 
     function initiateDrag(d, domNode) {
         draggingNode = d;
@@ -507,6 +543,9 @@ function draw_tree(error, treeData) {
             }
             domNode = this;
             if (selectedNode) {
+                // console.log("dragging Node:", draggingNode.id);
+                // console.log("selectedNode:", selectedNode.id)
+                movenode(draggingNode.id, selectedNode.id);
                 // now remove the element from the parent, and insert it into the new elements children
                 var index = draggingNode.parent.children.indexOf(draggingNode);
                 if (index > -1) {
@@ -672,6 +711,12 @@ function draw_tree(error, treeData) {
         centerNode(d);
     }
 
+    function showNodeAsWebPage(d) {
+        var displayDoc = window.open("", "Node Details"); //, "width=800,height=500"); //"displayNode.html");
+        displayDoc.document.write("<head><title>" + d.name + "</title></head><body>" +
+            "<h2>Name:" + d.name + "</h2><br/>" + "<p>Description:" + d.description + "</p><body>");
+    }
+
     function update(source) {
         // Compute the new height, function counts total children of root node and sets tree height accordingly.
         // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
@@ -737,7 +782,8 @@ function draw_tree(error, treeData) {
                 // return d.id;
                 return d.name;
             })
-            .style("fill-opacity", 0);
+            .style("fill-opacity", 0)
+            .on('click', showNodeAsWebPage);
 
         // phantom node to give us mouseover in a radius around it
         nodeEnter.append("circle")

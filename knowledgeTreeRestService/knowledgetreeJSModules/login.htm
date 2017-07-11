@@ -99,13 +99,16 @@
                     var nam = encodeURIComponent($("#uname").val());
                     // var orientation = encodeURIComponent($("#orientation").val());
                     var landingpage = "webUITree/index.html" //"KnowledgeTree.html"
-                        // var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + content[0]["IpAddress"]; // + "&orientation=" + orientation;
-                    d3.csv("restServiceUrl.csv", function(content) {
-                        // IpAddress = content[0]["IpAddress"];
-                        console.log("userip ", content[0]["IpAddress"]);
-                        var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + content[0]["IpAddress"];
-                        window.location.href = url;
-                    });
+                        /*                    d3.csv("restServiceUrl.csv").get(function(err, content) {
+                                                if (err) {
+                                                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + "&orientation=" + orientation;
+                                                    window.location.href = url;
+                                                } else {
+                                                    console.log("userip ", content[0]["IpAddress"]);*/
+                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + content[0]["IpAddress"]; // + "&orientation=" + orientation;
+                    window.location.href = url;
+                    /*}
+                    });*/
                 });
             });
         </script>
