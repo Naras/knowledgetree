@@ -80,12 +80,12 @@ function create_node() {
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
         console.log('Created Node: ' + id);
-        d3.xhr(url + "subject-with-relation")
+        d3.xhr(url + "work-with-relation")
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
                 JSON.stringify({
-                    "subject": { "id": new_node.id, "name": new_node.name, "description": new_node.description },
+                    "work": { "id": new_node.id, "name": new_node.name, "description": new_node.description },
                     "related": create_node_parent.id,
                     "relation": new_node.relation,
                     "sortorder": new_node.sortorder
@@ -115,7 +115,7 @@ function rename_node() {
         node_to_rename.description = $('#RenameNodeDescription').val();
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
-        d3.xhr(url + "subject/" + node_to_rename.id)
+        d3.xhr(url + "work/" + node_to_rename.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .send("PUT",
@@ -151,7 +151,7 @@ function move_node() {
         $('#MoveParentNodeId').val('');
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
-        d3.xhr(url + "subject-move/" + node_to_move.id)
+        d3.xhr(url + "work-move/" + node_to_move.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
@@ -345,7 +345,7 @@ function draw_tree(error, treeData) {
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         // var auth = getCookie("knowledgetreeauth");
         var auth = getauth();
-        d3.xhr(url + "subject-with-relation/" + node.id)
+        d3.xhr(url + "work-with-relation/" + node.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .send("DELETE",
@@ -440,7 +440,7 @@ function draw_tree(error, treeData) {
         strconfirm = confirm("Are you sure you want to move " + node_to_move + " to " + theparent);
         if (strconfirm == false) return false;
         var auth = getauth();
-        d3.xhr(url + "subject-move/" + node_to_move)
+        d3.xhr(url + "work-move/" + node_to_move)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
@@ -457,7 +457,6 @@ function draw_tree(error, treeData) {
                 }
             );
         console.log('Moved Node: ' + node_to_move + " Under: " + theparent);
-        return true;
     }
 
     function initiateDrag(d, domNode) {
@@ -591,7 +590,7 @@ function draw_tree(error, treeData) {
                     expand(selectedNode);
                     sortTree();
                     endDrag();
-                } else endDrag();
+                } else endDrag()
             } else {
                 endDrag();
             }
@@ -655,7 +654,7 @@ function draw_tree(error, treeData) {
                     }
                 }
         */
-        result = (d._children || d.children) ? "darkgray" : "white";
+        result = (d._children || d.children) ? "brown" : "darkbrown";
         return result;
     }
 

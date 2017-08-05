@@ -25,7 +25,7 @@ def get_dbhost():
 database_url = get_dbhost()
 if database_url==None:
     # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase('knowledgetree', **{'user': get_username(), 'password': get_password()})
+    database = MySQLDatabase('knowledgetree_temp', **{'user': get_username(), 'password': get_password()})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
     database = MySQLDatabase('knowledgetree', host=database_url, port=3306, user = get_username(), password=get_password())
@@ -73,6 +73,14 @@ class Subject(BaseModel):
     class Meta:
         db_table = 'subject'
 
+class Orphan(BaseModel):
+    description = CharField(db_column='Description', null=True)
+    name = CharField(db_column='Name')
+    id = CharField(primary_key=True)
+
+    class Meta:
+        db_table = 'orphan'
+
 class SubjectSubjectRelation(BaseModel):
     description = CharField(db_column='Description', null=True)
     name = CharField(db_column='Name', null=True)
@@ -90,4 +98,47 @@ class SubjectRelatestoSubject(BaseModel):
     class Meta:
         db_table = 'subject_relatesto_subject'
         primary_key = CompositeKey('subject1', 'subject2')
+
+class Work(BaseModel):
+    description = CharField(db_column='Description', null=True)
+    name = CharField(db_column='Title', null=True)
+    id = CharField(primary_key=True)
+
+    class Meta:
+        db_table = 'work'
+
+class WorkWorkRelation(BaseModel):
+    description = CharField(db_column='Description', null=True)
+    name = CharField(db_column='Name', null=True)
+    id = CharField(primary_key=True)
+
+    class Meta:
+        db_table = 'work_work_relation'
+
+class WorkRelatestoWork(BaseModel):
+    relation = ForeignKeyField(db_column='relation_id', null=True, rel_model=WorkWorkRelation, to_field='id')
+    work1 = ForeignKeyField(db_column='work1', rel_model=Work, to_field='id')
+    work2 = ForeignKeyField(db_column='work2', rel_model=Work, related_name='work_work2_set', to_field='id')
+
+    class Meta:
+        db_table = 'work_relatesto_work'
+        primary_key = CompositeKey('work1', 'work2')
+
+class WorkSubjectRelation(BaseModel):
+    description = CharField(db_column='Description', null=True)
+    name = CharField(db_column='Name', null=True)
+    id = CharField(primary_key=True)
+
+    class Meta:
+        db_table = 'work_subject_relation'
+
+class SubjectHasWork(BaseModel):
+    subject = ForeignKeyField(db_column='Subject', rel_model=Subject, to_field='id')
+    work = ForeignKeyField(db_column='Work', rel_model=Work, to_field='id')
+    work_subject_relation = ForeignKeyField(db_column='work_subject_relation', rel_model=WorkSubjectRelation, to_field='id')
+
+    class Meta:
+        db_table = 'subject_has_work'
+        primary_key = CompositeKey('subject', 'work', 'work_subject_relation')
+
 

@@ -103,7 +103,6 @@ class TestUM(unittest.TestCase):
         self.assertIn( \
         '{"relation":"Anga","sortorder":65,"subject1":"idtestParent","subject2":"idtestChild"}', \
             response.text.replace('\n','').replace(' ',''))
-
     def test_modify_subjects(self):
         # -----------------modify the parent----------------------
         response =  restPut('subject/idtestParent',{'id': 'idtestParent','name': 'name-test-parent-update','description': 'description-test-parent-update'})
@@ -127,7 +126,6 @@ class TestUM(unittest.TestCase):
         self.assertEqual( \
         '{"subject":{"description":"description-test-child-update","id":"idtestChild","name":"name-test-child-update"}}', \
             response.text.replace('\n','').replace(' ',''))
-
     def test_remove_subjects(self):
         # ------------------remove the child & its relation-------------
         response = restDelete('subject-with-relation/idtestChild')
@@ -140,6 +138,102 @@ class TestUM(unittest.TestCase):
         # ----------------------remove the sample subject-------------------
         response = restDelete('subject/idtest')
         self.assertEqual(response.status_code,200)
+
+    def test_works(self):
+        get_services = ['works','work-to-work','work-work-relations']
+        for service in get_services:
+            response = restGet(service)
+            # print response.text
+            self.assertEqual(response.status_code,200)
+    def test_create_works(self):
+        # ----------------create a sample work--------------------------
+        response =  restPost('work',{'id': 'idtest','name': 'name-test','description': 'description-test'})
+        self.assertEqual(response.status_code,201)
+        self.assertIn('idtest',response.text)
+        # ----------------create a duplicate of the work--------------------------
+        '''
+        response = restPost('work',{"id": "idtest", "name": "name-test-duplicate", "description": "description-test-duplicate"})
+        self.assertEqual(response.status_code,201)
+        # print "attempt to create duplicate:", response.text
+        self.assertIn('idtest',response.text,'duplicate created')
+        '''
+        # ----------------create a parent work--------------------------
+        response =  restPost('work',{'id': 'idtestParent','name': 'name-test-parent','description': 'description-test-parent'})
+        # print 'status:', response.status_code, '\n',response.text
+        # create a child work
+        response = restPost('work-with-relation', \
+                        {"work": {"id": "idtestChild", "name": "name-test-child", "description": "description-test-child"},
+                         "related": "idtestParent", "relation": "derived","sortorder": 65 })
+        self.assertEqual(response.status_code,200)
+        self.assertEqual ('{"work":true}',response.text.replace('\n','').replace(' ',''))
+        # print 'status:', response.status_code, '\n',response.text.replace('\n','')
+        # # pprint.pprint(response.json())
+
+        # create a duplicate child work
+        '''
+        response = restPost('work-with-relation', \
+                        {"work": {"id": "idtestChild", "name": "name-test-child-duplicate", "description": "description-test-child-duplicate"},
+                         "related": "idtestParent", "relation": "commentary","sortorder": 65 })
+        self.assertEqual(response.status_code,200)
+        self.assertEqual ('{"subject":true}',response.text.replace('\n','').replace(' ',''))
+        '''
+        # ----------------get the parent work------------------
+        response=restGet('work/idtestParent')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual( \
+        '{"work":{"description":"description-test-parent","id":"idtestParent","name":"name-test-parent"}}', \
+            response.text.replace('\n','').replace(' ',''))
+        # print 'status:', response.status_code, '\n',response.text.replace('\n','').replace(' ','')
+
+        # -----------------get the child work-----------------
+        response=restGet('work/idtestChild')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual( \
+        '{"work":{"description":"description-test-child","id":"idtestChild","name":"name-test-child"}}', \
+            response.text.replace('\n','').replace(' ','').replace(' ',''))
+        response=restGet('work-to-work')
+        # print response.text.replace('\n','').replace(' ','')
+
+        # ------------------check the parent-child relation------------------
+        self.assertIn( \
+        '{"relation":"derived","sortorder":65,"work1":"idtestParent","work2":"idtestChild"}', \
+            response.text.replace('\n','').replace(' ',''))
+    def test_modify_works(self):
+        # -----------------modify the parent----------------------
+        response =  restPut('work/idtestParent',{'id': 'idtestParent','name': 'name-test-parent-update','description': 'description-test-parent-update'})
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,201)
+        # print 'status:', response.status_code, '\n', response.text.replace('\n','').replace(' ','')
+        self.assertEqual( \
+        '{"work":{"description":"description-test-parent-update","id":"idtestParent","name":"name-test-parent-update"}}', \
+            response.text.replace('\n','').replace(' ',''))
+
+        # -------------------get the parent--------------------------
+        response = restGet('work/idtestParent')
+        self.assertEqual(response.status_code,200)
+
+        # ------------------modify the child & the relation order-------------------------------
+        response =  restPut('work/idtestChild',{'id': 'idtestChild','name': 'name-test-child-update','description': 'description-test-child-update', \
+                                                   'relation': 'volume','sortorder':'78'})
+        self.assertEqual(response.status_code,201)
+        # response = restGet('subject/idtestChild')
+        # print 'status:', response.status_code, '\n', response.text.replace('\n','').replace(' ','')
+        self.assertEqual( \
+        '{"work":{"description":"description-test-child-update","id":"idtestChild","name":"name-test-child-update"}}', \
+            response.text.replace('\n','').replace(' ',''))
+    def test_remove_works(self):
+        # ------------------remove the child & its relation-------------
+        response = restDelete('work-with-relation/idtestChild')
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,200)
+        # ----------------------remove the parent-------------------
+        response = restDelete('work/idtestParent')
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,200)
+        # ----------------------remove the sample subject-------------------
+        response = restDelete('work/idtest')
+        self.assertEqual(response.status_code,200)
+
 
 if __name__ == '__main__':
     unittest.main()

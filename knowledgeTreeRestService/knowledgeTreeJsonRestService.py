@@ -1,8 +1,7 @@
 __author__ = 'naras_mg'
 # libraries
 from flask import Flask, jsonify, abort, make_response, request
-import json, ast, logging, peewee
-import flask_httpauth
+import json, ast, logging, peewee, flask_httpauth
 import networkx as nx
 from networkx.readwrite import json_graph
 import random, string
@@ -30,6 +29,7 @@ def unauthorized():
 
 # own modules
 import knowledgeTreeModelSmall as ktm
+
 def create_relation(subject1,subject2,relation,sortorder=None):
     # for item in srsJson:
     #     dict = ast.literal_eval(item)
@@ -45,7 +45,7 @@ def create_relation(subject1,subject2,relation,sortorder=None):
             srsJson.append(dict)
             srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relation=relation,sortorder=sortorder)
         except peewee.IntegrityError:
-            print('Failed to create relation:', dict)
+            logging.debug(auth.username() + 'Failed to create relation:', dict)
             return False
     return True
 def update_relation(subject2,relation=None,sortorder=None):
@@ -63,7 +63,7 @@ def update_relation(subject2,relation=None,sortorder=None):
             if sortorder is not None:srsNew.sortorder = sortorder
             srsNew.save()
         except peewee.IntegrityError:
-            print('Failed to update relation:', dict)
+            logging.debug(auth.username() + 'Failed to update relation:', dict)
             return False
     return True
 def delete_relation(subject1,subject2,relation):
@@ -84,7 +84,7 @@ def delete_relation(subject1,subject2,relation):
             srs.delete_instance()
             return True
         except:
-            print('Failed to delete relation:')  #, dict
+            logging.debug(auth.username() + 'Failed to delete relation:')  #, dict
             return False
 def find_relation(subject1,subject2):
     for dict in srsJson:
@@ -125,7 +125,7 @@ def entity_json_dict_list(rows):
                 withoutCRLF = unicode(withoutCRLF).replace('\n','')
                 withoutCRLF=unicode(withoutCRLF).replace("'", r'\"')
                 # if fld_name == 'description':
-                #     print(withoutCRLF)
+                #     logging.debug(auth.username() + withoutCRLF)
                 jsonElement += "'" + fld_name + "':'" + withoutCRLF + "',"  # escape /r/n
         elem = jsonElement[:-1] + '}'
         # elem = ast.literal_eval(jsonElement2)
@@ -172,20 +172,210 @@ def refreshFromdb():
     subjectsJson = entity_json_dict_list(subjects)
     srs = ktm.SubjectRelatestoSubject.select()
     srsJson = entity_json_dict_list(srs)
+
+def work_find_relation(work1,work2):
+    for dict in wrwJson:
+        # dict = item #ast.literal_eval(item)
+        if (dict['work1'] == work1) and (dict['work2'] == work2):
+          return dict['relation']
+    return None
+def work_find_relations(work):  # find all relations a subject has with another subject
+    relations = []
+    for item in wrwJson:
+        dict = item #ast.literal_eval(item)
+        if dict['work2'] == work:
+            # print dict
+            dictitem = {'related': dict['work1'], 'relation': dict['relation']}
+            if 'sortorder' in dict: dictitem['sortorder']=dict['sortorder']
+            relations.append(dictitem)
+    return relations
+def work_find_item_json_dict_list(lst,key,value):
+    for dic in lst:
+        # print dic, type(dic)
+        if dic[key] == value: return dic
+    return None
+def work_create_relation(work1,work2,relation,sortorder=None):
+    # for item in wrwJson:
+    #     dict = ast.literal_eval(item)
+    #     if (dict['work1'] == work1) and (dict['work2'] == work2) and (dict['relations'] == relation): #duplicate relation
+    #       return False
+    if (work_find_item_json_dict_list(worksJson,'id',work1) is None) or (work_find_item_json_dict_list(worksJson,'id',work2) is None) or (work_find_item_json_dict_list(wwrJson,'id',relation) is None):
+        return False  # either of the works or relation not valid
+    elif work_find_relation(work1,work2) is not None:  # works are already related
+        return False
+    else:
+        try:
+            dict = {'work1':work1,'work2':work2,'relation':relation,'sortorder':sortorder}
+            wrwJson.append(dict)
+            wrwNew = ktm.WorkRelatestoWork.create(work1=work1,work2=work2,relation=relation,sortorder=sortorder)
+        except peewee.IntegrityError:
+            logging.debug(auth.username() + 'Failed to create work relation:', dict)
+            return False
+    return True
+def work_update_relation(work2,relation=None,sortorder=None):
+    work1 = work_find_relations(work2)[0]['related']   # a list of work1s - usually only one expected
+    if (work_find_item_json_dict_list(worksJson,'id',work1) is None) or (work_find_item_json_dict_list(worksJson,'id',work2) is None) \
+            or (work_find_item_json_dict_list(wwrJson,'id',relation) is None):
+        return False  # either of the works or relation not valid
+    else:
+        try:
+            # update the subject relations and sort order on the db
+            work_replace_relation(work1,work2,relation,sortorder)
+            wrwNew = ktm.WorkRelatestoWork.get(ktm.WorkRelatestoWork.work1==work1,ktm.WorkRelatestoWork.work2==work2)
+            if relation is not None:wrwNew.relation = relation
+            if sortorder is not None:wrwNew.sortorder = sortorder
+            wrwNew.save()
+        except peewee.IntegrityError:
+            logging.debug(auth.username() + 'Failed to update work relation:', dict)
+            return False
+    return True
+def work_replace_relation(work1,work2,relation=None,sortorder=None):
+    for dict in wrwJson:
+        if (dict['work1'] == work1) and (dict['work2'] == work2):
+          if relation is not None: dict['relation'] = relation
+          if sortorder is not None: dict['sortorder'] = sortorder
+          return dict
+    return None
+def work_delete_relation(work1,work2,relation):
+    found = False
+    for indx in range(len(wrwJson)):  # find and remove the entry in Json array
+        dict = wrwJson[indx] #ast.literal_eval(wrwJson[indx])
+        # print dict
+        if (dict['work1'] == work1) and (dict['work2'] == work2) and (dict['relation'] == relation):
+            del wrwJson[indx]
+            found = True
+            break;
+    if not found: return False
+    # if (find_item_json_dict_list(worksJson,'id',work1) is None) or (find_item_json_dict_list(worksJson,'id',work2) is None) or (find_item_json_dict_list(wwrJson,'id',relation) is None):
+    #     return False # either of the works or relation not valid
+    else:
+        try:
+            wrw = ktm.WorkRelatestoWork.get(work1=work1,work2=work2,relation=relation)
+            wrw.delete_instance()
+            return True
+        except:
+            logging.debug(auth.username() + 'Failed to delete work relation:')  #, dict
+            return False
+def work_refreshGraph():
+    g = nx.Graph()
+    for row in worksJson:
+        g.add_node(row['id'])
+        g.node[row['id']]['name'] = row['name']
+        if 'description' in row: g.node[row['id']]['description'] = row['description']
+    for row in wrwJson:
+        g.add_edge(row['work1'],row['work2'])
+        g[row['work1']][row['work2']]['relation'] = row['relation']
+        if 'sortorder' in row:
+            g[row['work1']][row['work2']]['sortorder'] = row['sortorder']
+            # print row['sortorder']
+        else:g[row['work1']][row['work2']]['sortorder'] = '99'
+        # print g[row['work1']][row['work2']]
+    return g
+def work_refreshFromdb():
+    # logging.debug('refresh works and relations from db')
+    works = ktm.Work.select()
+    worksJson = entity_json_dict_list(works)
+    wrw = ktm.WorkRelatestoWork.select()
+    wrwJson = entity_json_dict_list(wrw)
+def work_add_name_description(td):
+    dict = work_find_item_json_dict_list(worksJson,'id',td['id'])
+    if not (dict == None):
+        if 'name' in dict: td['name'] = dict['name']
+        if 'description' in dict: td['description'] = dict['description']
+        rel = work_find_relations(dict['id'])
+        if not (rel==[]):
+            td['relation']=rel[0]['relation']
+            if 'sortorder' in rel[0]: td['sortorder']=rel[0]['sortorder']
+        if 'children' in td:
+            for child in td['children']:
+                child = work_add_name_description(child)
+    return td
+def work_move_relation(work,newparent,newrelation=None,sortorder=None):  # moves a work from one parent to another - the subtree moves
+    relations=work_find_relations(work)
+    work_delete_relation(relations[0]['related'],work,relations[0]['relation'])
+    if newrelation == None: newrelation = relations[0]['relation']
+    return work_create_relation(newparent,work,newrelation,sortorder)
+def work_create_work(work):
+    if work_find_item_json_dict_list(worksJson,'id','idtest') is not None:
+        # generate a random string and concatenate
+        work['id'] = (work['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+    worksJson.append(work)
+    ktm.Work.create(id=work['id'],name=work['name'],description=work['description'])
+    return {'work': work}
+def work_create_work_with_relation(work_related_relation):
+    dict = work_related_relation #json.loads(work_related_relation)
+    work2 = dict['work']
+    work1id = dict['related']
+    relation = dict['relation']
+    if 'sortorder' in dict: sortorder = dict['sortorder']
+    else: sortorder = None
+    if work_find_item_json_dict_list(worksJson,'id',work1id) is None:
+        return None
+    if work_find_item_json_dict_list(worksJson,'id',work2['id']) is not None:
+        # generate a random string and concatenate
+        work2['id'] = (work2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+    work_create_work(work2)
+    return work_create_relation(work1id,work2['id'],relation,sortorder)
+def work_delete_work(wrk_id):
+    wrk = find_item_json_dict_list(worksJson,'id',wrk_id)
+    if wrk is None or len(wrk) == 0:
+        return False
+    for work_index in range(len(worksJson)):
+        # print subj_index,worksJson[subj_index],type(worksJson[subj_index])
+        # subj_as_dict = ast.literal_eval(worksJson[subj_index])
+        work_as_dict = worksJson[work_index]
+        if (work_as_dict['id'] == wrk['id'] or work_as_dict[u'id'] == wrk['id'] or work_as_dict['id'] == wrk[u'id']):
+            # print 'db delete:', subj_as_dict, type(subj_as_dict)
+            workx = ktm.Work.get(ktm.Work.id == work_as_dict['id'])
+            workx.delete_instance()
+            del worksJson[work_index]
+            break
+    # worksJson.remove(sub)
+    return True #subj_as_dict
+def work_delete_work_with_relation(wrk_id):
+    relations = work_find_relations(wrk_id)
+    for work_with_relation in relations:
+        work1 = work_with_relation['related']
+        relation = work_with_relation['relation']
+        work_delete_relation(work1,wrk_id,relation) # each relation with another work1 removed
+    work_delete_work(wrk_id)
+    return True
+def work_update_work(wrk_id,wrk_in):
+    for index in range(len(worksJson)):
+        # json_acceptable_string = worksJson[index].replace("'", "\"")
+        dict = worksJson[index]
+        if dict['id'] == wrk_id:
+            if 'name' in wrk_in: dict['name'] = wrk_in['name']
+            if 'description' in wrk_in: dict['description'] = wrk_in['description']
+            worksJson[index] = dict #json.dumps(dict)
+            subj = ktm.Work.get(ktm.Work.id == wrk_id)
+            subj.name = dict['name']
+            subj.description = dict['description']
+            subj.save()
+            # update relation and sortorder if given
+            if 'relation' in wrk_in:
+                if 'sortorder' in wrk_in: work_update_relation(wrk_id,wrk_in['relation'],wrk_in['sortorder'])
+                else: work_update_relation(wrk_id,wrk_in['relation'])
+            else:
+                if 'sortorder' in wrk_in: work_update_relation(wrk_id,wrk_in['sortorder'])
+            return worksJson[index]
+    return None
+
 logging.basicConfig(filename='knowledgeTreeJournal.log',format='%(asctime)s %(message)s',level=logging.DEBUG)
 
 app = Flask(__name__)
 
+# db = ktm.database
+# db.create_tables([ktm.Subject, ktm.SubjectRelatestoSubject], safe=True)
+#
+# # g.graph['subject'] = ktm.Subject.select()
+# subjects = ktm.Subject.select()
+
 db = ktm.database
-db.create_tables([ktm.Subject, ktm.SubjectRelatestoSubject], safe=True)
+db.create_tables([ktm.Subject, ktm.SubjectSubjectRelation, ktm.SubjectRelatestoSubject, \
+                  ktm.Work, ktm.WorkWorkRelation, ktm.WorkRelatestoWork], safe=True)
 
-# g.graph['subject'] = ktm.Subject.select()
-subjects = ktm.Subject.select()
-
-db = ktm.database
-db.create_tables([ktm.Subject, ktm.SubjectSubjectRelation, ktm.SubjectRelatestoSubject], safe=True)
-
-logging.debug('Opened knowledgeTree Tables - Subject, SubjectSubjectRelation, Subject-Relates-to-Subject')
+logging.debug('Opened knowledgeTree Tables - Subject, SubjectSubjectRelation, Subject-Relates-to-Subject, Work, WorkWorkRelation & Work_Relatesto_Work')
 
 subjects = ktm.Subject.select()
 subjectsJson = entity_json_dict_list(subjects)
@@ -194,8 +384,17 @@ ssr = ktm.SubjectSubjectRelation.select()
 ssrJson = entity_json_dict_list(ssr)
 srs = ktm.SubjectRelatestoSubject.select()
 srsJson = entity_json_dict_list(srs)
-logging.debug('populated Subjects, SubjectSubjectRelation & Subject-Relates-to-Subject arrays')
-g = refreshGraph();
+
+wwr = ktm.WorkWorkRelation.select()
+wwrJson = entity_json_dict_list(wwr)
+wrw = ktm.WorkRelatestoWork.select()
+wrwJson = entity_json_dict_list(wrw)
+works = ktm.Work.select()
+worksJson = entity_json_dict_list(works)
+
+logging.debug('populated Subject, SubjectSubjectRelation, Subject-Relates-to-Subject, Work, WorkWorkRelation & Work_Relatesto_Work arrays')
+gs = refreshGraph()
+gw = work_refreshGraph()
 
 endpoint_prefix = '/knowledgeTree/api/v1.0/'
 
@@ -413,6 +612,208 @@ def shutdown():
     if get_role(auth.username())=='admin':
         shutdown_server()
         return jsonify({'result':'Server shutting down...'});
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+
+#------------------------------------ work related selects -----------------------
+#  --------------------  all features allowed for normal users(view works and relations) below -----------------------------
+@app.route(endpoint_prefix + 'works', methods=['GET'])
+@auth.login_required
+def get_works():
+    logging.debug(auth.username() + ':servicing JSON GET All works')
+    return jsonify({'works': worksJson})
+@app.route(endpoint_prefix + 'work/<string:wrk_id>', methods=['GET'])
+@auth.login_required
+def get_work(wrk_id):
+    # sub = [sub for sub in subjectsJson if sub['id'] == str(wrk_id)]
+    logging.debug(auth.username() + ':servicing JSON GET work: ' + wrk_id)
+    wrk = find_item_json_dict_list(worksJson,'id',wrk_id)
+    if wrk is None or len(wrk) == 0:
+        logging.error('JSON GET id missing: ' + wrk_id)
+        abort(404)
+    return jsonify({'work': wrk})
+@app.route(endpoint_prefix + 'work-work-relations', methods=['GET'])
+@auth.login_required
+def get_work_work_relations():
+    logging.debug(auth.username() + ':servicing JSON GET All work-work-relations')
+    return jsonify({'relations': wwrJson})
+@app.route(endpoint_prefix + 'work-to-work', methods=['GET'])
+@auth.login_required
+def get_work_relates_work():
+    logging.debug(auth.username() + ':servicing JSON GET All work-relates-to-work')
+    return jsonify({'work-to-work': wrwJson})
+@app.route(endpoint_prefix + 'nodes-edges-work', methods=['GET'])
+@auth.login_required
+def get_nodes_edges_work():
+    logging.debug(auth.username() + ':servicing JSON GET work nodes & edges')
+    work_refreshFromdb()
+    # g = refreshGraph()
+    # write json formatted data
+    # d = json_graph.node_link_data(g) # node-link format to serialize
+    # write json
+    return jsonify(json_graph.node_link_data(work_refreshGraph()))
+@app.route(endpoint_prefix + 'tree-work', methods=['GET'])
+@auth.login_required
+def get_tree_work():
+    logging.debug(auth.username() + ':servicing JSON GET work tree')
+    work_refreshFromdb()
+    # g = refreshGraph()
+    # write json formatted data
+    # t = nx.bfs_tree(g,"aum")
+    # treedata = json_graph.tree_data(t,"aum")
+    # write json
+    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),"all")))
+@app.route(endpoint_prefix + 'subtree-work/<string:wrk_id>', methods=['GET'])
+@auth.login_required
+def get_subtree_work(wrk_id):
+    logging.debug(auth.username() + ':servicing JSON GET work sub-tree')
+    work_refreshFromdb()
+    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),wrk_id)))
+#  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
+@app.route(endpoint_prefix + 'work-with-relation', methods=['POST'])
+@auth.login_required
+def create_work_with_relation():
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing create work with relation:'+str(request.json))
+        if not request.json or not 'work' in request.json or not 'related' in request.json or not 'relation' in request.json:
+            logging.error('incorrect request:' + str(request.json))
+            abort(400)
+        if 'sortorder' in request.json: dict = {"work": request.json['work'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
+        else: dict = {"work": request.json['work'], "related": request.json['work'], "relation": request.json['relation']}
+        work2 = dict['work']
+        if not 'id' in work2 or not 'name' in work2:
+            logging.error('incorrect request:' + str(work2))
+            abort(401)
+        work1id = dict['related']
+        if dict.has_key('relation'): relation = dict['relation']
+        else: relation = None
+        if dict.has_key('sortorder'): sortorder = int(dict['sortorder'])
+        else: sortorder = None
+        if find_item_json_dict_list(worksJson,'id',work1id) is None:  # no work1
+            return None
+        if find_item_json_dict_list(worksJson,'id',work2['id']) is not None:
+            # duplicate work2 id .. generate a random id suffix and concatenate
+            work2['id'] = (work2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+        # workx = work2 #ast.literal_eval(work2)
+        ktm.Work.create(id=work2['id'],name=work2['name'],description=work2['description'])  # db create row
+        worksJson.append(work2)
+        return jsonify({'work': work_create_relation(work1id,work2['id'],relation=relation,sortorder=sortorder)})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work', methods=['POST'])
+@auth.login_required
+def create_work():
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing create work')
+        if not request.json or not 'id' in request.json or not 'name' in request.json:
+            logging.error('incorrect request:' + str(request.json))
+            abort(400)
+        work = {"id": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
+        if find_item_json_dict_list(worksJson,'id',str(request.json['id'])) is not None:
+            # subj = ast.literal_eval(str(sub))
+            # generate a random string and concatenate - changes id to unique 20-char string
+            work['id'] = (work['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+        ktm.Work.create(id=work['id'],name=work['name'],description=work['description'])  # db create row
+        worksJson.append(work)
+        return jsonify({'work': work}), 201
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work/<string:wrk_id>', methods=['PUT'])
+@auth.login_required
+def update_work(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing update work: ' + wrk_id)
+        if (not request.json) or ('name' in request.json and type(request.json['name']) != unicode) \
+                or ('description' in request.json and type(request.json['description']) is not unicode) \
+                or ('relation' in request.json and type(request.json['relation']) is not unicode) \
+                or ('sortorder' in request.json and type(request.json['sortorder']) is not unicode):
+            logging.error('JSON PUT error incorrect request:' + str(request.json))
+            abort(400)
+        for index in range(len(worksJson)):
+            # json_acceptable_string = subjectsJson[index].replace("'", "\"")
+            dict = worksJson[index] #ast.literal_eval(subjectsJson[index])
+            if dict['id'] == wrk_id:
+                dict['name'] = request.json.get('name', '')
+                dict['description'] = request.json.get('description', '')
+                worksJson[index] = dict #json.dumps(dict)
+                workx = ktm.Work.get(ktm.Work.id == wrk_id)   # db get/update row
+                workx.name = dict['name']
+                workx.description = dict['description']
+                workx.save()
+                if 'relation' in request.json or 'sortorder' in request.json:  # modify work_to_work if any change to relation or sort order
+                    work_update_relation(wrk_id,request.json.get('relation', None),int(request.json.get('sortorder', None)))
+                return jsonify({'work': dict}), 201
+        logging.error('JSON PUT: id missing - '+ wrk_id)
+        abort(404)  # not found
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work-with-relation/<string:wrk_id>', methods=['DELETE'])
+@auth.login_required
+def delete_work_with_relation(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing delete subject with relation: ' + wrk_id)
+        relations = work_find_relations(wrk_id)
+        for work_with_relation in relations:
+            work1 = work_with_relation['related']
+            relation = work_with_relation['relation']
+            work_delete_relation(work1,wrk_id,relation)# each relation with another work1 removed
+        for work_index in range(len(worksJson)): # remove work from db & Json list
+                work_as_dict = worksJson[work_index] #ast.literal_eval(subjectsJson[subj_index])
+                if work_as_dict['id'] == wrk_id or work_as_dict[u'id'] == wrk_id:
+                    workdbrow = ktm.Work.get(ktm.Work.id == work_as_dict['id'])   # db get/delete row
+                    workdbrow.delete_instance()
+                    del worksJson[work_index]
+                    break
+        return jsonify({'result': True})
+@app.route(endpoint_prefix + 'work/<string:wrk_id>', methods=['DELETE'])
+@auth.login_required
+def delete_work(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing delete subject: ' + wrk_id)
+        wrk = find_item_json_dict_list(worksJson,'id',wrk_id)
+        if wrk is None or len(wrk) == 0:
+            logging.error('incorrect request:' + str(request.json))
+            abort(404)
+        # if len(wrk) == 0:
+        #     return False
+        for work_index in range(len(worksJson)):
+            work_as_dict = worksJson[work_index] #ast.literal_eval(worksJson[work_index])
+            if (work_as_dict['id'] == wrk['id'] or work_as_dict[u'id'] == wrk['id'] or work_as_dict['id'] == wrk[u'id']) :
+                workx = ktm.Work.get(ktm.Work.id == work_as_dict['id'])   # db get/delete row
+                workx.delete_instance()
+                del worksJson[work_index]
+                break
+        return jsonify({'result': True})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work-to-work', methods=['POST'])
+@auth.login_required
+def create_work_to_work():
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing work-to-work create relation')
+        if not request.json or not 'work1' in request.json or not 'work2' in request.json or not 'relation' in request.json:
+            logging.error('JSON POST incorrect request:' + str(request.json))
+            abort(400)
+        return jsonify({'result': work_create_relation(request.json['work1'],request.json['work2'],request.json['relation'])})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work-to-work', methods=['DELETE'])
+@auth.login_required
+def delete_work_to_work():
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing work-to-work delete relation')
+        if not request.json or not 'work1' in request.json or not 'work2' in request.json or not 'relation' in request.json:
+            logging.error('JSON POST incorrect request:' + str(request.json))
+            abort(400)
+        return jsonify({'result': work_delete_relation(request.json['work1'],request.json['work2'],request.json['relation'])})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work-move/<string:wrk_id>', methods=['POST'])
+@auth.login_required
+def move_work(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing work-to-work move relation')
+        if not request.json or not 'id' in request.json:
+            logging.error('JSON POST incorrect request:' + str(request.json))
+            abort(400)
+        if 'relation' in request.json:
+            if 'sortorder' in request.json:return jsonify({'result': work_move_relation(wrk_id,request.json['id'],request.json['relation'],request.json['sortorder'])})
+            else:return jsonify({'result': work_move_relation(wrk_id,request.json['id'],request.json['relation'])})
+        else:
+            return jsonify({'result': work_move_relation(wrk_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 
 if __name__ == '__main__':

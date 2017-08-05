@@ -57,7 +57,7 @@
         var userip;
     </script>-->
     <!--    <script type="text/javascript" src="https://l2.io/ip.js?var=userip"></script>-->
-    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <!--<script src="d3.v3.min.js"></script>-->
     <form>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
         <div class="container">
@@ -68,6 +68,7 @@
             <input type="password" id="psw" placeholder="Enter Password" name="psw" required>
             <br>
             <!--<input type="checkbox" id="orientation" name="orientation" checked="checked"> Display/Landscape (uncheck for Display/Portrait)-->
+            <input type="checkbox" id="displayWorkTree" name="displayWorkTree" checked="unchecked"> Display Work Tree (uncheck for Display Subject Tree)
         </div>
         <input type="button" id="btnQueryString" value="Login" />
         <!-- not a submit button with action at a server. Parameters are to be passed to next form in a function below  -->
@@ -98,7 +99,8 @@
 
                     var nam = encodeURIComponent($("#uname").val());
                     // var orientation = encodeURIComponent($("#orientation").val());
-                    var landingpage = "webUITree/index.html" //"KnowledgeTree.html"
+                    var landingpage = "webUITree/index.html";
+                    if (document.getElementById('displayWorkTree').checked) landingpage = "webUITree/index_work.html"
                         /*                    d3.csv("restServiceUrl.csv").get(function(err, content) {
                                                 if (err) {
                                                     var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1"; // + "&orientation=" + orientation;
