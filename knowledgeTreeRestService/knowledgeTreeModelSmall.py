@@ -25,7 +25,7 @@ def get_dbhost():
 database_url = get_dbhost()
 if database_url==None:
     # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase('knowledgetree_temp', **{'user': get_username(), 'password': get_password()})
+    database = MySQLDatabase('knowledgetree', **{'user': get_username(), 'password': get_password()})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
     database = MySQLDatabase('knowledgetree', host=database_url, port=3306, user = get_username(), password=get_password())
@@ -135,7 +135,7 @@ class WorkSubjectRelation(BaseModel):
 class SubjectHasWork(BaseModel):
     subject = ForeignKeyField(db_column='Subject', rel_model=Subject, to_field='id')
     work = ForeignKeyField(db_column='Work', rel_model=Work, to_field='id')
-    work_subject_relation = ForeignKeyField(db_column='work_subject_relation', rel_model=WorkSubjectRelation, to_field='id')
+    relation = ForeignKeyField(db_column='work_subject_relation', rel_model=WorkSubjectRelation, to_field='id')
 
     class Meta:
         db_table = 'subject_has_work'

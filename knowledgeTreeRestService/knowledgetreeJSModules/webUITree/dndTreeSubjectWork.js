@@ -3,76 +3,22 @@ function close_modal() {
 }
 
 var tree_root;
-var connect_node_modal_active = false;
-var node_to_connect = null;
-var view_node_modal_active = false;
-var node_to_view = null;
 var create_node_modal_active = false;
 var rename_node_modal_active = false;
-var move_node_modal_active = false;
+var connect_node_modal_active = false;
 var create_node_parent = null;
 var node_to_rename = null;
-var node_to_move = null;
-var allNodes = [];
+var connect_node_parent = null;
 
-var with_relation = "subject-with-relation";
-var work_or_subject = "subject";
-
-function getParameterByName(name, url) {
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
-
-function getIp() {
-    return getParameterByName('userip')
-}
-// var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-var url = "http://" + getIp() + ":5000/knowledgeTree/api/v1.0/";
-
-function getauth() {
-    // hidden form will have a fld where we will store string version of passed query string
-    auth = getParameterByName('name') + ":" + getParameterByName('psw');
-    return auth;
-}
-
-function connect_subject_work_nodes() {
-    subject = $('#ConnectSubjectNode').val();
-    work = $('#ConnectWorkNode').val();
-    node_relation = $('#ConnectNodeRelation').val();
-    console.log('Connected Subject:' + subject + " to Work:" + work + " with relation:" + node_relation);
-
-    d3.xhr(url + "subject-to-work")
-        .header("Content-Type", "application/json")
-        .header("Authorization", "Basic " + btoa(auth))
-        .post(
-            JSON.stringify({
-                "subject": subject,
-                "work": work,
-                "relation": node_relation
-            }),
-            function(err, rawdata) {
-                if (err) console.log("error:", err)
-                else {
-                    try {
-                        // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
-                        console.log("response:", rawdata.response, "status:", rawdata.status);
-                    } catch (error) { console.log("error:", err, "response:", rawdata) };
-                }
-            }
-        );
-    close_modal();
-}
-
-function showNodeConnectTree(d) {
-    if (works_or_subjects_list == "works") keyword = "&subject=";
-    else keyword = "&work=";
-    var displayDoc = window.open("subject_work.html?auth=" + auth + keyword + d.id + "&url=" + url, "Node Connection Details");
-}
+function generateUUID() {
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random() * 16) % 16 | 0;
+        d = Math.floor(d / 16);
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    return uuid;
+};
 
 function create_node() {
     if (create_node_parent && create_node_modal_active) {
@@ -83,160 +29,95 @@ function create_node() {
         if (create_node_parent.children == null) {
             create_node_parent.children = [];
         }
-        id = $('#CreateNodeId').val();
-        sortorder = $('#CreateNodeOrder').val();
+        id = generateUUID();
         name = $('#CreateNodeName').val();
-        relation = $('#CreateNodeRelation').val();
-        description = $('#CreateNodeDescription').val().replace(/(\r\n|\n|\r)/gm, "\r\n")
         new_node = {
             'name': name,
             'id': id,
-            'sortorder': sortorder,
-            'description': description,
-            'relation': relation,
             'depth': create_node_parent.depth + 1,
             'children': [],
             '_children': null
         };
+        console.log('Create Node name: ' + name);
         create_node_parent.children.push(new_node);
         create_node_modal_active = false;
-        $('#CreateNodeId').val('');
         $('#CreateNodeName').val('');
-        $('#CreateNodeDescription').val('');
-        $('#CreateNodeOrder').val('');
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-        var auth = getauth();
-        console.log('Created Node: ' + id);
-        if (works_or_subjects_list == "works") {
-            with_relations = "subject-with-relation";
-            d3.xhr(url + with_relations)
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Basic " + btoa(auth))
-                .post(
-                    JSON.stringify({
-                        "subject": { "id": new_node.id, "name": new_node.name, "description": new_node.description },
-                        "related": create_node_parent.id,
-                        "relation": new_node.relation,
-                        "sortorder": new_node.sortorder
-                    }),
-                    function(err, rawdata) {
-                        if (err) console.log("error:", err)
-                        else {
-                            try {
-                                // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
-                                console.log("response:", rawdata.response, "status:", rawdata.status);
-                            } catch (error) { console.log("error:", err, "response:", rawdata) };
-                        }
-                    }
-                );
-        } else {
-            with_relations = "work-with-relation";
-            d3.xhr(url + with_relations)
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Basic " + btoa(auth))
-                .post(
-                    JSON.stringify({
-                        "work": { "id": new_node.id, "name": new_node.name, "description": new_node.description },
-                        "related": create_node_parent.id,
-                        "relation": new_node.relation,
-                        "sortorder": new_node.sortorder
-                    }),
-                    function(err, rawdata) {
-                        if (err) console.log("error:", err)
-                        else {
-                            try {
-                                // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
-                                console.log("response:", rawdata.response, "status:", rawdata.status);
-                            } catch (error) { console.log("error:", err, "response:", rawdata) };
-                        }
-                    }
-                );
-        }
-        // console.log(work_or_subject);
-        close_modal();
-        outer_update(create_node_parent);
+
     }
+    close_modal();
+    outer_update(create_node_parent);
 }
 
 function rename_node() {
     if (node_to_rename && rename_node_modal_active) {
-        $('#RenameNodeId').disabled = true;
-        node_to_rename.id = $('#RenameNodeId').val();
-        node_to_rename.name = $('#RenameNodeName').val();
-        node_to_rename.relation = $('#RenameNodeRelation').val();
-        node_to_rename.sortorder = $('#RenameNodeOrder').val();
-        node_to_rename.description = $('#RenameNodeDescription').val();
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-        var auth = getauth();
-        if (works_or_subjects_list == "works") {
-            with_relations = "subject-with-relation";
-            work_or_subject = "subject/";
-        } else {
-            with_relations = "work-with-relation";
-            work_or_subject = "work/";
-        }
-        d3.xhr(url + work_or_subject + node_to_rename.id)
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Basic " + btoa(auth))
-            .send("PUT",
-                JSON.stringify({
-                    "name": node_to_rename.name,
-                    "description": node_to_rename.description,
-                    "relation": node_to_rename.relation,
-                    "sortorder": node_to_rename.sortorder
-                }),
-                function(err, rawdata) {
-                    if (err) console.log("error:", err)
-                    else {
-                        try {
-                            console.log("response:", rawdata.response, "status:", rawdata.status);
-                        } catch (error) { console.log("error:", err, "response:", rawdata) };
-                    }
-                }
-            );
-        console.log('Updated Node: ' + node_to_rename.id);
+        name = $('#RenameNodeName').val();
+        console.log('New Node name: ' + name);
+        node_to_rename.name = name;
         rename_node_modal_active = false;
+
     }
     close_modal();
     outer_update(node_to_rename);
 }
 
-function move_node() {
-    if (node_to_move && move_node_modal_active) {
-        $('#MoveNodeId').disabled = true;
-        node_to_move.id = $('#MoveNodeId').val();
-        node_to_move.parent = $('#MoveParentNode').val();
-        node_to_move.sortorder = $('#MoveNodeOrder').val();
-        // console.log('Moving Node: ' + node_to_move.id + ' To Node: ' + node_to_move.parent);
-        $('#MoveParentNodeId').val('');
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-        var auth = getauth();
-        if (works_or_subjects_list == "works") move_what = "subject-move/";
-        else move_what = "work-move/"
-        d3.xhr(url + move_what + node_to_move.id)
+outer_update = null;
+
+function connect_subject_work_nodes() {
+    if (connect_node_parent && connect_node_modal_active) {
+        if (connect_node_parent._children != null) {
+            connect_node_parent.children = connect_node_parent._children;
+            connect_node_parent._children = null;
+        }
+        if (connect_node_parent.children == null) {
+            connect_node_parent.children = [];
+        }
+        subject = $('#ConnectSubjectNode').val();
+        work = $('#ConnectWorkNode').val();
+        node_relation = $('#ConnectNodeRelation').val();
+        if (work_or_subject == "work") id = subject;
+        else id = work;
+        new_node = {
+            'id': id,
+            'depth': 1,
+            'children': [],
+            '_children': null
+        };
+        connect_node_parent.children.push(new_node);
+        connect_node_modal_active = false;
+        console.log('Connected Subject:' + subject + " to Work:" + work + " with relation:" + node_relation);
+        d3.xhr(url + "subject-to-work")
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
                 JSON.stringify({
-                    "id": node_to_move.parent,
-                    "sortorder": node_to_move.sortorder
+                    "subject": subject,
+                    "work": work,
+                    "relation": node_relation
                 }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
                     else {
                         try {
+                            // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
                             console.log("response:", rawdata.response, "status:", rawdata.status);
                         } catch (error) { console.log("error:", err, "response:", rawdata) };
                     }
                 }
             );
-        console.log('Moved Node: ' + node_to_move.id + " Under: " + node_to_move.parent + "order:" + node_to_move.sortorder);
-        move_node_modal_active = false;
-        close_modal();
-        outer_update(node_to_move);
     }
+    close_modal();
+    outer_update(connect_node_parent);
 }
-outer_update = null;
+
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
 
 function draw_tree(error, treeData) {
 
@@ -266,130 +147,35 @@ function draw_tree(error, treeData) {
         .projection(function(d) {
             return [d.y, d.x];
         });
-
+    if (!getParameterByName('work')) work_or_subject = 'subject';
+    else work_or_subject = 'work';
     var menu = [{
-            title: 'View node',
-            action: function(elm, d, i) {
-                $("#ViewNodeId").val(d.id);
-                $("#ViewNodeName").val(d.name);
-                $("#ViewNodeOrder").val(d.sortorder);
-                $("#ViewNodeDescription").val(d.description);
-                $("#ViewNodeRelation").val(d.relation);
-                view_node_modal_active = true;
-                node_to_view = d;
-                $("#ViewNodeName").focus();
-                $('#ViewNodeModal').foundation('reveal', 'open');
+        title: "Connect Node",
+        action: function(elm, d, i) {
+            if (work_or_subject == "subject") {
+                $("#ConnectWorkNode").val('');
+                $("#ConnectSubjectNode").val(d.id);
+                $("#ConnectWorkNode").prop('disabled', false);
+                $("#ConnectSubjectNode").prop('disabled', true);
+                $('#CreateSubjectNode').focus();
+            } else {
+                $("#ConnectWorkNode").val(d.id);
+                $("#ConnectSubjectNode").val('');
+                $("#ConnectWorkNode").prop('disabled', true);
+                $("#ConnectSubjectNode").prop('disabled', false);
+                $('#CreateWorkNode').focus();
             }
-        },
-        {
-            title: 'Create child node',
-            action: function(elm, d, i) {
-                create_node_parent = d;
-                create_node_modal_active = true;
-                $('#CreateNodeModal').foundation('reveal', 'open');
-                $('#CreateNodeName').focus();
-            }
-        },
-        {
-            title: 'Edit node',
-            action: function(elm, d, i) {
-                $("#RenameNodeId").val(d.id);
-                $("#RenameNodeName").val(d.name);
-                $("#RenameNodeDescription").val(d.description);
-                $("#RenameNodeRelation").val(d.relation);
-                $("#RenameNodeOrder").val(d.sortorder);
-                rename_node_modal_active = true;
-                node_to_rename = d;
-                $("#RenameNodeName").focus();
-                $('#RenameNodeModal').foundation('reveal', 'open');
-            }
-        },
-        {
-            title: 'Remove node',
-            action: function(elm, d, i) {
-                delete_node(d);
-            }
-        },
-        // {
-        //     title: 'Collapse all nodes',
-        //     action: function(elm, d, i) {
-        //         collapseAllChildren(d);
-        //     }
-        // },
-        {
-            title: "Connect " + works_or_subjects_list_sanskrit + " Node",
-            action: function(elm, d, i) {
-                if (works_or_subjects_list == "works") {
-                    // alert("case subjects");
-                    $("#ConnectWorkNode").val('');
-                    $("#ConnectSubjectNode").val(d.id);
-                    $("#ConnectWorkNode").prop('disabled', false);
-                    $("#ConnectSubjectNode").prop('disabled', true);
-                    $('#CreateSubjectNode').focus();
-                } else {
-                    // alert("case works");
-                    $("#ConnectWorkNode").val(d.id);
-                    $("#ConnectSubjectNode").val('');
-                    $("#ConnectWorkNode").prop('disabled', true);
-                    $("#ConnectSubjectNode").prop('disabled', false);
-                    $('#CreateWorkNode').focus();
-                }
-                $("#ConnectNodeRelation").val("pramaana_prameya");
-                $('#ConnectNodeModal').foundation('reveal', 'open');
-                connect_node_modal_active = true;
-                // node_to_connect = d;
-            }
-        },
-        {
-            title: 'View ' + works_or_subjects_list_sanskrit + ' Connections',
-            action: function(elm, d, i) {
-                showNodeConnectTree(d);
-            }
-        },
-        {
-            title: 'Move node',
-            action: function(elm, d, i) {
-                move_node_modal_active = true;
-                node_to_move = d;
-                getAllnodes(treeData, d.id);
-                var count = allNodes.length;
-                for (var i = 0; i < count; i++) {
-                    $('#MoveParentList').append("<option value=\"" + allNodes[i] + "\"></option>");
-                }
-                $("#MoveNodeId").val(d.id);
-                $("#MoveNodeOrder").val(d.sortorder);
-                $('#MoveParentNodeId').focus();
-                $('#MoveNodeModal').foundation('reveal', 'open');
-            }
+            $("#ConnectNodeRelation").val("pramaana_prameya");
+            $('#ConnectNodeModal').foundation('reveal', 'open');
+            connect_node_modal_active = true;
+            connect_node_parent = d;
         }
-        /*,
-                {
-                    title: 'View Subtree',
-                    action: function(elm, d, i) {
-                        var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-                        var auth = getauth();
-                        d3.json(url + "subtree/" + d.id).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                            if (err) console.log("error:", err);
-                            else {
-                                draw_tree(err, content);
-                            }
-                        });
-                    }
-                }*/
-    ]
-
-    function getAllnodes(d, stopAt) {
-        // if (typeof d.id != 'undefined') allNodes.push(d.id);
-        if (d.id != stopAt) {
-            allNodes.push(d.id);
-            if (d.children) {
-                var count = d.children.length;
-                for (var i = 0; i < count; i++) {
-                    getAllnodes(d.children[i], stopAt);
-                }
-            }
+    }, {
+        title: 'Remove node connection',
+        action: function(elm, d, i) {
+            delete_node(d);
         }
-    }
+    }]
 
     // A recursive helper function for performing some setup by walking through all nodes
 
@@ -415,33 +201,43 @@ function draw_tree(error, treeData) {
     }, function(d) {
         return d.children && d.children.length > 0 ? d.children : null;
     });
-
-    function collapseAllChildren(node) {
-        visit(treeData, function(d) {
-                if (d.children) {
-                    for (var child of d.children) {
-                        collapse(child);
-                        if (child == node) {
-                            break;
+    /*
+        function delete_node(node) {
+            visit(treeData, function(d) {
+                    if (d.children) {
+                        for (var child of d.children) {
+                            if (child == node) {
+                                d.children = _.without(d.children, child);
+                                update(root);
+                                break;
+                            }
                         }
                     }
-                }
-            },
-            function(d) {
-                return d.children && d.children.length > 0 ? d.children : null;
-            });
-    }
-
-
+                },
+                function(d) {
+                    return d.children && d.children.length > 0 ? d.children : null;
+                });
+        }
+    */
     function delete_node(node) {
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-        var auth = getauth();
-        if (works_or_subjects_list == "works") with_relations = "subject-with-relation/";
-        else with_relations = "work-with-relation/";
-        d3.xhr(url + with_relations + node.id)
+        // var auth = getauth();
+        url = getParameterByName("url");
+        auth = getParameterByName("auth");
+        if (!getParameterByName("work")) {
+            me = node.id;
+            myparent = node.parent.id;
+        } else {
+            me = node.parent.id;
+            myparent = node.id;
+        }
+        d3.xhr(url + "subject-to-work")
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
-            .send("DELETE",
+            .send("DELETE", JSON.stringify({
+                    "subject": myparent,
+                    "work": me,
+                    "relation": node.relation
+                }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
                     else {
@@ -449,6 +245,7 @@ function draw_tree(error, treeData) {
                             // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
                             console.log("response:", rawdata.response, "status:", rawdata.status);
                         } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        console.log('Removed Node connection: ' + String(node.parent.id) + "-" + String(node.id) + " - " + String(node.relation));
                         visit(treeData, function(d) {
                                 if (d.children) {
                                     for (var child of d.children) {
@@ -465,7 +262,6 @@ function draw_tree(error, treeData) {
                             });
                     }
                 });
-        console.log('Removed Node id: ' + node.id);
     }
 
 
@@ -473,20 +269,7 @@ function draw_tree(error, treeData) {
 
     function sortTree() {
         tree.sort(function(a, b) {
-            // return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
-            // console.log(typeof(b.sortorder), b.sortorder);
-            var b_order = b.sortorder;
-            if (typeof(b_order) == "string") {
-                if (b_order.length < 2) b_order = "0" + b_order;
-            }
-
-            var a_order = a.sortorder;
-            if (typeof(a_order) == "string") {
-                if (a_order.length < 2) a_order = "0" + a_order;
-            }
-
-            return b_order < a_order ? 1 : -1;
-            // return b.sortorder < a.sortorder ? 1 : -1;
+            return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
         });
     }
     // Sort the tree initially incase the JSON isn't in a sorted order.
@@ -528,32 +311,6 @@ function draw_tree(error, treeData) {
 
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
     var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
-
-    function movenode(node_to_move, theparent) {
-        strconfirm = confirm("Are you sure you want to move " + node_to_move + " to " + theparent);
-        if (strconfirm == false) return false;
-        var auth = getauth();
-        if (works_or_subjects_list == "works") move_what = "subject-move/";
-        else move_what = "work-move/"
-        d3.xhr(url + move_what + node_to_move)
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Basic " + btoa(auth))
-            .post(
-                JSON.stringify({
-                    "id": theparent
-                }),
-                function(err, rawdata) {
-                    if (err) console.log("error:", err)
-                    else {
-                        try {
-                            console.log("response:", rawdata.response, "status:", rawdata.status);
-                        } catch (error) { console.log("error:", err, "response:", rawdata) };
-                    }
-                }
-            );
-        console.log('Moved Node: ' + node_to_move + " Under: " + theparent);
-        return true;
-    }
 
     function initiateDrag(d, domNode) {
         draggingNode = d;
@@ -664,29 +421,25 @@ function draw_tree(error, treeData) {
             }
             domNode = this;
             if (selectedNode) {
-                // console.log("dragging Node:", draggingNode.id);
-                // console.log("selectedNode:", selectedNode.id)
-                if (movenode(draggingNode.id, selectedNode.id) == true) {
-                    // now remove the element from the parent, and insert it into the new elements children
-                    var index = draggingNode.parent.children.indexOf(draggingNode);
-                    if (index > -1) {
-                        draggingNode.parent.children.splice(index, 1);
-                    }
-                    if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
-                        if (typeof selectedNode.children !== 'undefined') {
-                            selectedNode.children.push(draggingNode);
-                        } else {
-                            selectedNode._children.push(draggingNode);
-                        }
-                    } else {
-                        selectedNode.children = [];
+                // now remove the element from the parent, and insert it into the new elements children
+                var index = draggingNode.parent.children.indexOf(draggingNode);
+                if (index > -1) {
+                    draggingNode.parent.children.splice(index, 1);
+                }
+                if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
+                    if (typeof selectedNode.children !== 'undefined') {
                         selectedNode.children.push(draggingNode);
+                    } else {
+                        selectedNode._children.push(draggingNode);
                     }
-                    // Make sure that the node being added to is expanded so user can see added node is correctly moved
-                    expand(selectedNode);
-                    sortTree();
-                    endDrag();
-                } else endDrag();
+                } else {
+                    selectedNode.children = [];
+                    selectedNode.children.push(draggingNode);
+                }
+                // Make sure that the node being added to is expanded so user can see added node is correctly moved
+                expand(selectedNode);
+                sortTree();
+                endDrag();
             } else {
                 endDrag();
             }
@@ -735,39 +488,24 @@ function draw_tree(error, treeData) {
 
     // color a node properly
     function colorNode(d) {
-        // result = "#fff";
-        /*        if (d.synthetic == true) {
-                    result = (d._children || d.children) ? "darkgray" : "lightgray";
-                } else {
-                    if (d.type == "USDA") {
-                        result = (d._children || d.children) ? "orangered" : "orange";
-                    } else if (d.type == "Produce") {
-                        result = (d._children || d.children) ? "yellowgreen" : "yellow";
-                    } else if (d.type == "RecipeIngredient") {
-                        result = (d._children || d.children) ? "skyblue" : "royalblue";
-                    } else {
-                        result = "lightsteelblue"
-                    }
-                }
-        */
-        result = (d._children || d.children) ? "darkgray" : "white";
-        return result;
-    }
-
-    function colorLink(d) {
-        console.log("link relation:", d.relation)
-        switch (d.relation) {
-            case "Anga":
-                result = "lightgray";
-                break;
-            case "Avayavi":
-                result = "orange";
-                break;
-            default:
-                result = "black"
+        result = "#fff";
+        if (d.synthetic == true) {
+            result = (d._children || d.children) ? "darkgray" : "lightgray";
+        } else {
+            if (d.type == "USDA") {
+                result = (d._children || d.children) ? "orangered" : "orange";
+            } else if (d.type == "Produce") {
+                result = (d._children || d.children) ? "yellowgreen" : "yellow";
+            } else if (d.type == "RecipeIngredient") {
+                result = (d._children || d.children) ? "skyblue" : "royalblue";
+            } else {
+                result = "lightsteelblue"
+            }
         }
         return result;
     }
+
+
     // Function to update the temporary connector indicating dragging affiliation
     var updateTempConnector = function() {
         var data = [];
@@ -833,12 +571,6 @@ function draw_tree(error, treeData) {
         centerNode(d);
     }
 
-    function showNodeAsWebPage(d) {
-        var displayDoc = window.open("", "Node Details"); //, "width=800,height=500"); //"displayNode.html");
-        displayDoc.document.write("<head><title>" + d.name + "</title></head><body>" +
-            "<h2>Name:" + d.name + "</h2><br/>" + "<p>Description:" + d.description + "</p><body>");
-    }
-
     function update(source) {
         // Compute the new height, function counts total children of root node and sets tree height accordingly.
         // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
@@ -901,11 +633,9 @@ function draw_tree(error, treeData) {
                 return d.children || d._children ? "end" : "start";
             })
             .text(function(d) {
-                // return d.id;
-                return d.name;
+                return d.id;
             })
-            .style("fill-opacity", 0)
-            .on('click', showNodeAsWebPage);
+            .style("fill-opacity", 0);
 
         // phantom node to give us mouseover in a radius around it
         nodeEnter.append("circle")
@@ -930,8 +660,7 @@ function draw_tree(error, treeData) {
                 return d.children || d._children ? "end" : "start";
             })
             .text(function(d) {
-                // return d.id;
-                return d.name;
+                return d.id;
             });
 
         // Change the circle fill depending on whether it has children and is collapsed
@@ -1026,7 +755,6 @@ function draw_tree(error, treeData) {
     root.y0 = 0;
 
     // Layout the tree initially and center on the root node.
-    collapseAllChildren(root);
     update(root);
     centerNode(root);
     tree_root = root;

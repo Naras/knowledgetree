@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="foundation.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="d3-context-menu.css" />
-    <!-- <style>
+    <!--<style>
         #topNavigationBar {
             width: 49%;
         }
@@ -34,27 +34,38 @@
             text-decoration: none;
         }
     </style>-->
+    <!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
+    <script src="d3.v3.min.js"></script>
+    <script src="dndTree.js"></script>
+    <script src="d3-context-menu.js"></script>
+    <script src="underscore-min.js"></script>
+    <script src="jquery.js"></script>
+    <script src="fastclick.js"></script>
+    <script src="foundation.min.js"></script>
+    <script src="bluebird.min.js"></script>
 </head>
 
 <body>
-    <FORM NAME="kt">
-        <INPUT TYPE="hidden" NAME="fld">
-    </FORM>
-    <!--<FORM NAME="url">
-        <INPUT TYPE="button" NAME="restService" id="restServiceUrl">
-    </FORM>-->
-    <!--    <div id="topNavigationBar">
+    <!--<div id="topNavigationBar">
         <div class="topNavigationBar-menu">
             <ul>
-                <li><a href="#">Subjects</a></li>
-                <li><a href="#">Works</a></li>
-                <li><a href="#">Users</a></li>
+                <li><a href="#">Subject-Work-Relations</a></li>
+                <li><a href="#">Subjects & Works</a></li>
                 <li><a href="#">Persons</a></li>
                 <li><a href="#">Languages</a></li>
                 <li><a href="#">Logout</a></li>
             </ul>
         </div>
     </div>-->
+    <FORM NAME="kt">
+        <!--<INPUT type="hidden" name="fld">-->
+        <!--<input type="checkbox" id="displayWorkTree" name="displayWorkTree"> Display Subject Tree (uncheck for Display Work Tree)-->
+        <input type="radio" id="subject" name="displayTree" onclick="handleClick(this);" value="Subject" checked>Prameya
+        <input type="radio" id="work" name="displayTree" onclick="handleClick(this);" value="Work">PramaaNa
+    </FORM>
+    <!--<FORM NAME="url">
+        <INPUT TYPE="button" NAME="restService" id="restServiceUrl">
+    </FORM>-->
 
     <div id="ViewNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
         <h2 id="modalTitle">View Node</h2>
@@ -174,16 +185,43 @@
         </form>
         <a class="close-reveal-modal" aria-label="Close">&#215;</a>
     </div>
+
+    <div id="ConnectNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle_Connect" aria-hidden="true" role="dialog">
+        <h2 id="modalTitle_Connect">Connect Node</h2>
+        <form id="CreateWorkNodeForm">
+            <div class="row">
+                <div class="large-12 columns">
+                    <label>Subject Node Id
+                  <input type="text" list="list_create_subject" class="inputName" id='ConnectSubjectNode' placeholder="Prameya node id" disabled />
+                    <datalist id="list_create_subject">
+                </datalist>
+                    <label>Work Node Id
+                  <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode' placeholder="work node id" disabled/>
+              </label>
+                    <datalist id="list_create_work">
+                </datalist>
+                    <label>Relation
+                  <input type="text" list="list_create_subject_work_relation" class="inputName" id='ConnectNodeRelation' placeholder="node relation" />
+              </label>
+                    <datalist id="list_create_subject_work_relation">
+                </datalist>
+                </div>
+            </div>
+            <div class="row">
+                <div class="large-8 columns">
+                    &nbsp;
+                </div>
+                <div class="large-4 columns">
+                    <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
+                    <a href="#" class="button success" onclick="connect_subject_work_nodes()">Connect</a>
+                </div>
+            </div>
+        </form>
+        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+    </div>
+
     <div id="tree-container"></div>
 
-    <!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
-    <script src="d3.v3.min.js"></script>
-    <script src="dndTree.js"></script>
-    <script src="d3-context-menu.js"></script>
-    <script src="underscore-min.js"></script>
-    <script src="jquery.js"></script>
-    <script src="fastclick.js"></script>
-    <script src="foundation.min.js"></script>
     <script>
         function generateId() {
             id = $('#CreateNodeId').val();
@@ -195,6 +233,101 @@
                 idtrunc = id.slice(0, 15) + id.slice(idl - 5, idl - 1);
                 $('#CreateNodeId').val(idtrunc);
             } else $('#CreateNodeId').val(id);
+        }
+
+        function promise_works_or_subjects() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + works_or_subjects_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        $('#modalTitle_Connect').html("Connect " + works_or_subjects_list_sanskrit + " Node");
+                        $(content[works_or_subjects_list]).each(function() {
+                            if (works_or_subjects_list == "works")
+                                $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
+                            else $('#list_create_subject').append("<option value=\"" + this.id + "\"></option>");
+                        });
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function promise_subject_work_relations() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + "subject-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        $(content.relations).each(function() {
+                            $('#list_create_subject_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                        });
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function promise_relations() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + relations_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        $(content.relations).each(function() {
+                            $('#createRelationList').append("<option value=\"" + this.id + "\"></option>");
+                            $('#renameRelationList').append("<option value=\"" + this.id + "\"></option>");
+                        });
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function promise_tree() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + displayTree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        svgElement = $("#tree-container").children().first();
+                        svgElement.remove();
+                        draw_tree(err, content);
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function handleClick(myRadio) {
+            currentValue = myRadio.value;
+            if (currentValue == "Subject") {
+                displayTree = "tree";
+                relations_list = "subject-subject-relations";
+                works_or_subjects_list = "works";
+                works_or_subjects_list_sanskrit = "PramaaNa";
+            } else {
+                displayTree = "tree-work";
+                relations_list = "work-work-relations";
+                works_or_subjects_list = "subjects";
+                works_or_subjects_list_sanskrit = "Prameya";
+            }
+            promise_relations()
+                .then(promise_works_or_subjects)
+                .then(promise_subject_work_relations)
+                .then(promise_tree).then(
+                    //     function(response) {
+                    //     console.log("all promises fulfilled. Success!", response);
+                    // }
+                );
         }
     </script>
     <script>
@@ -221,21 +354,6 @@
             // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
             var url = "http://" + getIp() + ":5000/knowledgeTree/api/v1.0/";
             var auth = getauth();
-            d3.json(url + "tree").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                if (err) console.log("error:", err);
-                else {
-                    draw_tree(err, content);
-                    d3.json(url + "subject-subject-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                        if (err) console.log("error:", err);
-                        else {
-                            $(content.relations).each(function() {
-                                $('#createRelationList').append("<option value=\"" + this.id + "\"></option>");
-                                $('#renameRelationList').append("<option value=\"" + this.id + "\"></option>");
-                            });
-                        }
-                    });
-                }
-            });
         });
     </script>
 </body>

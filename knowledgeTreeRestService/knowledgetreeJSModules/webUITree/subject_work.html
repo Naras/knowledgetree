@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="foundation.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="d3-context-menu.css" />
+    <script src="d3.v3.min.js"></script>
+    <script src="dndTreeSubjectWork.js"></script>
+    <script src="d3-context-menu.js"></script>
+    <script src="underscore-min.js"></script>
+    <script src="jquery.js"></script>
+    <script src="fastclick.js"></script>
+    <script src="foundation.min.js"></script>
+    <!--<script src="bluebird.min.js"></script>-->
+</head>
+
+<body>
+    <FORM NAME="kt">
+        <INPUT TYPE="hidden" NAME="fld">
+    </FORM>
+    <div id="ConnectNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle_Connect" aria-hidden="true" role="dialog">
+        <h2 id="modalTitle_Connect">Connect Node</h2>
+        <form id="CreateWorkNodeForm">
+            <div class="row">
+                <div class="large-12 columns">
+                    <label>Subject Node Id
+                  <input type="text" list="list_create_subject" class="inputName" id='ConnectSubjectNode' placeholder="Prameya node id" disabled />
+                    <datalist id="list_create_subject">
+                </datalist>
+                    <label>Work Node Id
+                  <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode' placeholder="work node id" disabled/>
+              </label>
+                    <datalist id="list_create_work">
+                </datalist>
+                    <label>Relation
+                  <input type="text" list="list_create_subject_work_relation" class="inputName" id='ConnectNodeRelation' placeholder="node relation" />
+              </label>
+                    <datalist id="list_create_subject_work_relation">
+                </datalist>
+                </div>
+            </div>
+            <div class="row">
+                <div class="large-8 columns">
+                    &nbsp;
+                </div>
+                <div class="large-4 columns">
+                    <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
+                    <a href="#" class="button success" onclick="connect_subject_work_nodes()">Connect</a>
+                </div>
+            </div>
+        </form>
+        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+    </div>
+
+    <div id="tree-container"></div>
+    <script>
+        var url;
+        var auth;
+        // var relations_list;
+        var works_or_subjects_list;
+        var works_or_subjects_list_sanskrit;
+        if (!getParameterByName('subject')) {
+            works_or_subjects_list = "subjects";
+            works_or_subjects_list_sanskrit = "Prameya"
+                // relations_list = "subject-subject-relations";
+        } else {
+            works_or_subjects_list = "works";
+            works_or_subjects_list_sanskrit = "PramaNa"
+                // relations_list = "work-work-relations";
+        };
+
+        function promise_works_or_subjects() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + works_or_subjects_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        $('#modalTitle_Connect').html("Connect " + works_or_subjects_list_sanskrit + " Node");
+                        $(content[works_or_subjects_list]).each(function() {
+                            if (works_or_subjects_list == "works")
+                                $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
+                            else $('#list_create_subject').append("<option value=\"" + this.id + "\"></option>");
+                        });
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function promise_subject_work_relations() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + "subject-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else {
+                        $(content.relations).each(function() {
+                            $('#list_create_subject_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                        });
+                        resolve(result);
+                    }
+                });
+                resolve(result);
+            });
+        }
+
+        function promise_tree() {
+            return new Promise(function(resolve, reject) {
+                var result = d3.json(url + tree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) {
+                        console.log("error:", err);
+                        reject(new Error(err));
+                    } else
+                        resolve(result);
+                });
+                resolve(result);
+            });
+        }
+        // for the first initialization
+        $('document').ready(function() {
+            //  $("#restServiceUrl").load("restServiceUrl.txt");
+            $(document).foundation();
+            $(document).on('opened', '[data-reveal]', function() {
+                var element = $(".inputName:visible").first();
+                element.focus(function() {
+                    this.selectionStart = this.selectionEnd = this.value.length;
+                });
+                element.focus();
+            });
+            url = getParameterByName('url');
+            auth = getParameterByName('auth');
+            if (!getParameterByName('work')) tree = "tree-subject-work/" + getParameterByName('subject');
+            else tree = "tree-work-subject/" + getParameterByName('work');
+            // console.log(url, auth);
+            // console.log(tree);
+            promise_works_or_subjects().then(promise_subject_work_relations).then();
+            d3.json(url + tree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                if (err)
+                    console.log("error:", err);
+                else {
+                    // console.log(content);
+                    draw_tree(err, content);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
