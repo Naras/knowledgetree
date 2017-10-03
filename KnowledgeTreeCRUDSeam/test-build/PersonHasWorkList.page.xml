@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns="http://jboss.com/products/seam/pages"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://jboss.com/products/seam/pages http://jboss.com/products/seam/pages-2.2.xsd">
+
+   <param name="firstResult" value="#{personHasWorkList.firstResult}"/>
+   <param name="sort" value="#{personHasWorkList.orderColumn}"/>
+   <param name="dir" value="#{personHasWorkList.orderDirection}"/>
+   <param name="logic" value="#{personHasWorkList.restrictionLogicOperator}"/>
+
+   <param name="from"/>
+   <param name="person" value="#{personHasWorkList.personHasWork.id.person}"/>
+   <param name="relation" value="#{personHasWorkList.personHasWork.id.relation}"/>
+   <param name="work" value="#{personHasWorkList.personHasWork.id.work}"/>
+
+</page>

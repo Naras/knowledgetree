@@ -1,0 +1,169 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Subject has work Details</f:facet>
+
+        <s:decorate id="relation" template="layout/display.xhtml">
+            <ui:define name="label">Relation</ui:define>
+            <h:outputText value="#{subjectHasWorkHome.instance.id.relation}"/>
+        </s:decorate>
+        <s:decorate id="subject" template="layout/display.xhtml">
+            <ui:define name="label">Subject</ui:define>
+            <h:outputText value="#{subjectHasWorkHome.instance.id.subject}"/>
+        </s:decorate>
+        <s:decorate id="work" template="layout/display.xhtml">
+            <ui:define name="label">Work</ui:define>
+            <h:outputText value="#{subjectHasWorkHome.instance.id.work}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/SubjectHasWorkEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty subjectHasWorkFrom ? 'SubjectHasWorkList' : subjectHasWorkFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Subject</h:panelGroup>
+        </f:facet>
+    <div class="association" id="subjectParent">
+
+        <h:outputText value="There is no subject associated with this subjectHasWork."
+                   rendered="#{subjectHasWorkHome.instance.subject == null}"/>
+
+        <rich:dataTable var="_subject"
+                   value="#{subjectHasWorkHome.instance.subject}"
+                rendered="#{subjectHasWorkHome.instance.subject != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="subjectTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_subject.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_subject.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_subject.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewsubject"
+                     value="View"
+                      view="/Subject.xhtml">
+                    <f:param name="subjectId"
+                           value="#{_subject.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Work</h:panelGroup>
+        </f:facet>
+    <div class="association" id="workParent">
+
+        <h:outputText value="There is no work associated with this subjectHasWork."
+                   rendered="#{subjectHasWorkHome.instance.work == null}"/>
+
+        <rich:dataTable var="_work"
+                   value="#{subjectHasWorkHome.instance.work}"
+                rendered="#{subjectHasWorkHome.instance.work != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="workTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_work.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_work.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_work.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewwork"
+                     value="View"
+                      view="/Work.xhtml">
+                    <f:param name="workId"
+                           value="#{_work.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Work subject relation</h:panelGroup>
+        </f:facet>
+    <div class="association" id="workSubjectRelationParent">
+
+        <h:outputText value="There is no workSubjectRelation associated with this subjectHasWork."
+                   rendered="#{subjectHasWorkHome.instance.workSubjectRelation == null}"/>
+
+        <rich:dataTable var="_workSubjectRelation"
+                   value="#{subjectHasWorkHome.instance.workSubjectRelation}"
+                rendered="#{subjectHasWorkHome.instance.workSubjectRelation != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="workSubjectRelationTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_workSubjectRelation.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_workSubjectRelation.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_workSubjectRelation.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewworkSubjectRelation"
+                     value="View"
+                      view="/WorkSubjectRelation.xhtml">
+                    <f:param name="workSubjectRelationId"
+                           value="#{_workSubjectRelation.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

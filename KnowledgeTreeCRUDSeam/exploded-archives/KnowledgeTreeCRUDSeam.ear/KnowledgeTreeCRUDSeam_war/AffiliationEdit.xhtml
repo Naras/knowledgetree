@@ -1,0 +1,126 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="affiliation" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{affiliationHome.managed ? 'Edit' : 'Add'} Affiliation</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{affiliationHome.managed}"
+                       required="true"
+                           size="20"
+                      maxlength="20"
+                          value="#{affiliationHome.instance.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="100"
+                      maxlength="100"
+                          value="#{affiliationHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{affiliationHome.persist}"
+                       disabled="#{!affiliationHome.wired}"
+                       rendered="#{!affiliationHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{affiliationHome.update}"
+                       rendered="#{affiliationHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{affiliationHome.remove}"
+                      immediate="true"
+                       rendered="#{affiliationHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Affiliation.xhtml"
+                rendered="#{affiliationHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty affiliationFrom ? 'AffiliationList' : affiliationFrom}.xhtml"
+                rendered="#{!affiliationHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Person has affiliations">
+        <h:form styleClass="association" id="personHasAffiliationsChildren">
+
+            <h:outputText value="There are no personHasAffiliations associated with this affiliation."
+                       rendered="#{empty affiliationHome.personHasAffiliations}"/>
+
+            <rich:dataTable value="#{affiliationHome.personHasAffiliations}"
+                           var="_personHasAffiliation"
+                      rendered="#{not empty affiliationHome.personHasAffiliations}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="personHasAffiliationsTable">
+                <rich:column sortBy="#{_personHasAffiliation.id.affiliation}">
+                    <f:facet name="header">Affiliation</f:facet>
+                    <h:outputText value="#{_personHasAffiliation.id.affiliation}"/>
+                </rich:column>
+                <rich:column sortBy="#{_personHasAffiliation.id.person}">
+                    <f:facet name="header">Person</f:facet>
+                    <h:outputText value="#{_personHasAffiliation.id.person}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{affiliationHome.managed}" id="personHasAffiliations">
+        <div class="actionButtons">
+            <s:button id="addpersonHasAffiliation"
+                   value="Add personHasAffiliation"
+                    view="/PersonHasAffiliationEdit.xhtml"
+             propagation="none">
+                 <f:param name="affiliationId"
+                         value="#{affiliationHome.instance.id}"/>
+                 <f:param name="personHasAffiliationFrom" value="Affiliation"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

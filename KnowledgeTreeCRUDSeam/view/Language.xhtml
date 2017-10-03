@@ -1,0 +1,99 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Language Details</f:facet>
+
+        <s:decorate id="id" template="layout/display.xhtml">
+            <ui:define name="label">Id</ui:define>
+            <h:outputText value="#{languageHome.instance.id}"/>
+        </s:decorate>
+
+        <s:decorate id="name" template="layout/display.xhtml">
+            <ui:define name="label">Name</ui:define>
+            <h:outputText value="#{languageHome.instance.name}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/LanguageEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty languageFrom ? 'LanguageList' : languageFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/onetomany.gif" style="vertical-align: middle; padding-right: 4px;"/>Work in languages</h:panelGroup>
+        </f:facet>
+    <h:form styleClass="association" id="workInLanguagesChildren">
+
+        <h:outputText value="There are no workInLanguages associated with this language."
+                   rendered="#{empty languageHome.workInLanguages}"/>
+
+        <rich:dataTable value="#{languageHome.workInLanguages}"
+                       var="_workInLanguage"
+                  rendered="#{not empty languageHome.workInLanguages}"
+                rowClasses="rvgRowOne,rvgRowTwo"
+                        id="workInLanguagesTable">
+            <rich:column sortBy="#{_workInLanguage.id.language}">
+                <f:facet name="header">Language</f:facet>
+                <h:outputText value="#{_workInLanguage.id.language}"/>
+            </rich:column>
+            <rich:column sortBy="#{_workInLanguage.id.work}">
+                <f:facet name="header">Work</f:facet>
+                <h:outputText value="#{_workInLanguage.id.work}"/>
+            </rich:column>
+            <rich:column sortBy="#{_workInLanguage.location}">
+                <f:facet name="header">Location</f:facet>
+                <h:outputText value="#{_workInLanguage.location}"/>
+            </rich:column>
+            <h:column>
+                <f:facet name="header">Action</f:facet>
+                <s:link id="selectworkInLanguage"
+                     value="Select"
+                      view="/WorkInLanguage.xhtml">
+                    <f:param name="workInLanguageLanguage"
+                            value="#{_workInLanguage.id.language}"/>
+                    <f:param name="workInLanguageWork"
+                            value="#{_workInLanguage.id.work}"/>
+                    <f:param name="workInLanguageFrom" value="Language"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </h:form>
+
+    <div class="actionButtons">
+        <s:button
+               value="Add workInLanguage"
+                view="/WorkInLanguageEdit.xhtml">
+            <f:param name="languageId"
+                    value="#{languageHome.instance.id}"/>
+            <f:param name="workInLanguageFrom" value="Language"/>
+        </s:button>
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

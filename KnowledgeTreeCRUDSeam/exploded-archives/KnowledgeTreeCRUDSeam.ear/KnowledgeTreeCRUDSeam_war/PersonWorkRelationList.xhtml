@@ -1,0 +1,160 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="personWorkRelationSearch" styleClass="edit">
+
+        <rich:simpleTogglePanel label="PersonWorkRelation Search Filter" switchType="ajax">
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id" value="#{personWorkRelationList.personWorkRelation.id}"/>
+            </s:decorate>
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Description</ui:define>
+                <h:inputText id="description" value="#{personWorkRelationList.personWorkRelation.description}"/>
+            </s:decorate>
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name" value="#{personWorkRelationList.personWorkRelation.name}"/>
+            </s:decorate>
+
+            <s:decorate template="layout/display.xhtml">
+                <ui:define name="label">Match</ui:define>
+                <h:selectOneRadio id="logic" value="#{personWorkRelationList.restrictionLogicOperator}" styleClass="radio">
+                    <f:selectItem itemLabel="All" itemValue="and"/>
+                    <f:selectItem itemLabel="Any" itemValue="or"/>
+                </h:selectOneRadio>
+            </s:decorate>
+
+        </rich:simpleTogglePanel>
+
+        <div class="actionButtons">
+            <h:commandButton id="search" value="Search" action="/PersonWorkRelationList.xhtml"/>
+            <s:button id="reset" value="Reset" includePageParams="false"/>
+        </div>
+
+    </h:form>
+
+    <rich:panel>
+        <f:facet name="header">PersonWorkRelation Search Results (#{empty personWorkRelationList.resultList ? 0 : (personWorkRelationList.paginated ? personWorkRelationList.resultCount : personWorkRelationList.resultList.size)})</f:facet>
+    <div class="results" id="personWorkRelationList">
+
+    <h:outputText value="The personWorkRelation search returned no results."
+               rendered="#{empty personWorkRelationList.resultList}"/>
+
+    <rich:dataTable id="personWorkRelationList"
+                var="_personWorkRelation"
+              value="#{personWorkRelationList.resultList}"
+           rendered="#{not empty personWorkRelationList.resultList}">
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{personWorkRelationList}"/>
+                    <ui:param name="propertyLabel" value="Id"/>
+                    <ui:param name="propertyPath" value="personWorkRelation.id"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_personWorkRelation.id}"/>
+        </h:column>
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{personWorkRelationList}"/>
+                    <ui:param name="propertyLabel" value="Description"/>
+                    <ui:param name="propertyPath" value="personWorkRelation.description"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_personWorkRelation.description}"/>
+        </h:column>
+        <h:column>
+            <f:facet name="header">
+                <ui:include src="layout/sort.xhtml">
+                    <ui:param name="entityList" value="#{personWorkRelationList}"/>
+                    <ui:param name="propertyLabel" value="Name"/>
+                    <ui:param name="propertyPath" value="personWorkRelation.name"/>
+                </ui:include>
+            </f:facet>
+            <h:outputText value="#{_personWorkRelation.name}"/>
+        </h:column>
+        <rich:column styleClass="action">
+            <f:facet name="header">Action</f:facet>
+            <s:link view="/#{empty from ? 'PersonWorkRelation' : from}.xhtml"
+                   value="#{empty from ? 'View' : 'Select'}"
+             propagation="#{empty from ? 'none' : 'default'}"
+                      id="personWorkRelationViewId">
+                <f:param name="personWorkRelationId"
+                        value="#{_personWorkRelation.id}"/>
+            </s:link>
+            #{' '}
+            <s:link view="/PersonWorkRelationEdit.xhtml"
+                   value="Edit"
+             propagation="none"
+                      id="personWorkRelationEdit"
+                rendered="#{empty from}">
+                <f:param name="personWorkRelationId"
+                        value="#{_personWorkRelation.id}"/>
+            </s:link>
+        </rich:column>
+    </rich:dataTable>
+
+    </div>
+    </rich:panel>
+
+    <div class="tableControl">
+
+        <s:link view="/PersonWorkRelationList.xhtml"
+            rendered="#{personWorkRelationList.previousExists}"
+               value="#{messages.left}#{messages.left} First Page"
+                  id="firstPage">
+          <f:param name="firstResult" value="0"/>
+        </s:link>
+
+        <s:link view="/PersonWorkRelationList.xhtml"
+            rendered="#{personWorkRelationList.previousExists}"
+               value="#{messages.left} Previous Page"
+                  id="previousPage">
+            <f:param name="firstResult"
+                    value="#{personWorkRelationList.previousFirstResult}"/>
+        </s:link>
+
+        <s:link view="/PersonWorkRelationList.xhtml"
+            rendered="#{personWorkRelationList.nextExists}"
+               value="Next Page #{messages.right}"
+                  id="nextPage">
+            <f:param name="firstResult"
+                    value="#{personWorkRelationList.nextFirstResult}"/>
+        </s:link>
+
+        <s:link view="/PersonWorkRelationList.xhtml"
+            rendered="#{personWorkRelationList.nextExists}"
+               value="Last Page #{messages.right}#{messages.right}"
+                  id="lastPage">
+            <f:param name="firstResult"
+                    value="#{personWorkRelationList.lastFirstResult}"/>
+        </s:link>
+
+    </div>
+
+    <s:div styleClass="actionButtons" rendered="#{empty from}">
+        <s:button view="/PersonWorkRelationEdit.xhtml"
+                    id="create"
+           propagation="none"
+                 value="Create personWorkRelation">
+            <f:param name="personWorkRelationId"/>
+        </s:button>
+    </s:div>
+
+</ui:define>
+
+</ui:composition>

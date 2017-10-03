@@ -1,0 +1,139 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="workSubjectRelation" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{workSubjectRelationHome.managed ? 'Edit' : 'Add'} Work subject relation</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{workSubjectRelationHome.managed}"
+                       required="true"
+                           size="20"
+                      maxlength="20"
+                          value="#{workSubjectRelationHome.instance.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="descriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Description</ui:define>
+                <h:inputTextarea id="description"
+                               cols="80"
+                               rows="10"
+                              value="#{workSubjectRelationHome.instance.description}"/>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="45"
+                      maxlength="45"
+                          value="#{workSubjectRelationHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{workSubjectRelationHome.persist}"
+                       disabled="#{!workSubjectRelationHome.wired}"
+                       rendered="#{!workSubjectRelationHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{workSubjectRelationHome.update}"
+                       rendered="#{workSubjectRelationHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{workSubjectRelationHome.remove}"
+                      immediate="true"
+                       rendered="#{workSubjectRelationHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/WorkSubjectRelation.xhtml"
+                rendered="#{workSubjectRelationHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty workSubjectRelationFrom ? 'WorkSubjectRelationList' : workSubjectRelationFrom}.xhtml"
+                rendered="#{!workSubjectRelationHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Subject has works">
+        <h:form styleClass="association" id="subjectHasWorksChildren">
+
+            <h:outputText value="There are no subjectHasWorks associated with this workSubjectRelation."
+                       rendered="#{empty workSubjectRelationHome.subjectHasWorks}"/>
+
+            <rich:dataTable value="#{workSubjectRelationHome.subjectHasWorks}"
+                           var="_subjectHasWork"
+                      rendered="#{not empty workSubjectRelationHome.subjectHasWorks}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectHasWorksTable">
+                <rich:column sortBy="#{_subjectHasWork.id.relation}">
+                    <f:facet name="header">Relation</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.relation}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.subject}">
+                    <f:facet name="header">Subject</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.subject}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workSubjectRelationHome.managed}" id="subjectHasWorks">
+        <div class="actionButtons">
+            <s:button id="addsubjectHasWork"
+                   value="Add subjectHasWork"
+                    view="/SubjectHasWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="workSubjectRelationId"
+                         value="#{workSubjectRelationHome.instance.id}"/>
+                 <f:param name="subjectHasWorkFrom" value="WorkSubjectRelation"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

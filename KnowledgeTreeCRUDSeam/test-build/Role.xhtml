@@ -1,0 +1,95 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Role Details</f:facet>
+
+        <s:decorate id="id" template="layout/display.xhtml">
+            <ui:define name="label">Id</ui:define>
+            <h:outputText value="#{roleHome.instance.id}"/>
+        </s:decorate>
+
+        <s:decorate id="name" template="layout/display.xhtml">
+            <ui:define name="label">Name</ui:define>
+            <h:outputText value="#{roleHome.instance.name}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/RoleEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty roleFrom ? 'RoleList' : roleFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/onetomany.gif" style="vertical-align: middle; padding-right: 4px;"/>Person has roles</h:panelGroup>
+        </f:facet>
+    <h:form styleClass="association" id="personHasRolesChildren">
+
+        <h:outputText value="There are no personHasRoles associated with this role."
+                   rendered="#{empty roleHome.personHasRoles}"/>
+
+        <rich:dataTable value="#{roleHome.personHasRoles}"
+                       var="_personHasRole"
+                  rendered="#{not empty roleHome.personHasRoles}"
+                rowClasses="rvgRowOne,rvgRowTwo"
+                        id="personHasRolesTable">
+            <rich:column sortBy="#{_personHasRole.id.person}">
+                <f:facet name="header">Person</f:facet>
+                <h:outputText value="#{_personHasRole.id.person}"/>
+            </rich:column>
+            <rich:column sortBy="#{_personHasRole.id.role}">
+                <f:facet name="header">Role</f:facet>
+                <h:outputText value="#{_personHasRole.id.role}"/>
+            </rich:column>
+            <h:column>
+                <f:facet name="header">Action</f:facet>
+                <s:link id="selectpersonHasRole"
+                     value="Select"
+                      view="/PersonHasRole.xhtml">
+                    <f:param name="personHasRolePerson"
+                            value="#{_personHasRole.id.person}"/>
+                    <f:param name="personHasRoleRole"
+                            value="#{_personHasRole.id.role}"/>
+                    <f:param name="personHasRoleFrom" value="Role"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </h:form>
+
+    <div class="actionButtons">
+        <s:button
+               value="Add personHasRole"
+                view="/PersonHasRoleEdit.xhtml">
+            <f:param name="roleId"
+                    value="#{roleHome.instance.id}"/>
+            <f:param name="personHasRoleFrom" value="Role"/>
+        </s:button>
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

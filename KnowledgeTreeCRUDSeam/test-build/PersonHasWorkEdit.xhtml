@@ -1,0 +1,229 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="personHasWork" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{personHasWorkHome.managed ? 'Edit' : 'Add'} Person has work</f:facet>
+
+
+            <s:decorate id="personField" template="layout/edit.xhtml">
+                <ui:define name="label">Person</ui:define>
+                <h:inputText id="person"
+                       disabled="#{personHasWorkHome.managed}"
+                      required="true"
+                          size="20"
+                     maxlength="20"
+                         value="#{personHasWorkHome.instance.id.person}">
+                    <a:support event="onblur" reRender="personField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="relationField" template="layout/edit.xhtml">
+                <ui:define name="label">Relation</ui:define>
+                <h:inputText id="relation"
+                       disabled="#{personHasWorkHome.managed}"
+                      required="true"
+                          size="20"
+                     maxlength="20"
+                         value="#{personHasWorkHome.instance.id.relation}">
+                    <a:support event="onblur" reRender="relationField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+            <s:decorate id="workField" template="layout/edit.xhtml">
+                <ui:define name="label">Work</ui:define>
+                <h:inputText id="work"
+                       disabled="#{personHasWorkHome.managed}"
+                      required="true"
+                          size="20"
+                     maxlength="20"
+                         value="#{personHasWorkHome.instance.id.work}">
+                    <a:support event="onblur" reRender="workField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{personHasWorkHome.persist}"
+                       disabled="#{!personHasWorkHome.wired}"
+                       rendered="#{!personHasWorkHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{personHasWorkHome.update}"
+                       rendered="#{personHasWorkHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{personHasWorkHome.remove}"
+                      immediate="true"
+                       rendered="#{personHasWorkHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/PersonHasWork.xhtml"
+                rendered="#{personHasWorkHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty personHasWorkFrom ? 'PersonHasWorkList' : personHasWorkFrom}.xhtml"
+                rendered="#{!personHasWorkHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Person *" labelClass="required">
+    <div class="association" id="personParent">
+
+        <h:outputText value="There is no person associated with this personHasWork."
+                   rendered="#{personHasWorkHome.instance.person == null}"/>
+
+        <rich:dataTable var="_person"
+                   value="#{personHasWorkHome.instance.person}"
+                rendered="#{personHasWorkHome.instance.person != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="personTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_person.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">First</f:facet>
+                <h:outputText value="#{_person.first}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Initials</f:facet>
+                <h:outputText value="#{_person.initials}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Last</f:facet>
+                <h:outputText value="#{_person.last}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Middle</f:facet>
+                <h:outputText value="#{_person.middle}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Nick</f:facet>
+                <h:outputText value="#{_person.nick}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Other</f:facet>
+                <h:outputText value="#{_person.other}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Personlife id</f:facet>
+                <h:outputText value="#{_person.personlife.id}"/>
+            </h:column>
+        </rich:dataTable>
+
+        <div class="actionButtons">
+            <s:button id="#{personHasWorkHome.instance.person != null ? 'changeParent' : 'selectParent'}" value="#{personHasWorkHome.instance.person != null ? 'Change' : 'Select'} person"
+                       view="/PersonList.xhtml">
+                <f:param name="from" value="PersonHasWorkEdit"/>
+            </s:button>
+        </div>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab label="Person work relation *" labelClass="required">
+    <div class="association" id="personWorkRelationParent">
+
+        <h:outputText value="There is no personWorkRelation associated with this personHasWork."
+                   rendered="#{personHasWorkHome.instance.personWorkRelation == null}"/>
+
+        <rich:dataTable var="_personWorkRelation"
+                   value="#{personHasWorkHome.instance.personWorkRelation}"
+                rendered="#{personHasWorkHome.instance.personWorkRelation != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="personWorkRelationTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_personWorkRelation.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_personWorkRelation.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_personWorkRelation.name}"/>
+            </h:column>
+        </rich:dataTable>
+
+        <div class="actionButtons">
+            <s:button id="#{personHasWorkHome.instance.personWorkRelation != null ? 'changeParent' : 'selectParent'}" value="#{personHasWorkHome.instance.personWorkRelation != null ? 'Change' : 'Select'} personWorkRelation"
+                       view="/PersonWorkRelationList.xhtml">
+                <f:param name="from" value="PersonHasWorkEdit"/>
+            </s:button>
+        </div>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab label="Work *" labelClass="required">
+    <div class="association" id="workParent">
+
+        <h:outputText value="There is no work associated with this personHasWork."
+                   rendered="#{personHasWorkHome.instance.work == null}"/>
+
+        <rich:dataTable var="_work"
+                   value="#{personHasWorkHome.instance.work}"
+                rendered="#{personHasWorkHome.instance.work != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="workTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_work.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_work.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_work.name}"/>
+            </h:column>
+        </rich:dataTable>
+
+        <div class="actionButtons">
+            <s:button id="#{personHasWorkHome.instance.work != null ? 'changeParent' : 'selectParent'}" value="#{personHasWorkHome.instance.work != null ? 'Change' : 'Select'} work"
+                       view="/WorkList.xhtml">
+                <f:param name="from" value="PersonHasWorkEdit"/>
+            </s:button>
+        </div>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

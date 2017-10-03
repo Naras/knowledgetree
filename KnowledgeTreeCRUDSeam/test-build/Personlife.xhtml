@@ -1,0 +1,131 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Personlife Details</f:facet>
+
+
+        <s:decorate id="birth" template="layout/display.xhtml">
+            <ui:define name="label">Birth</ui:define>
+            <h:outputText value="#{personlifeHome.instance.birth}">
+                <s:convertDateTime type="date" dateStyle="short"/>
+            </h:outputText>
+        </s:decorate>
+
+        <s:decorate id="death" template="layout/display.xhtml">
+            <ui:define name="label">Death</ui:define>
+            <h:outputText value="#{personlifeHome.instance.death}">
+                <s:convertDateTime type="date" dateStyle="short"/>
+            </h:outputText>
+        </s:decorate>
+
+        <s:decorate id="history" template="layout/display.xhtml">
+            <ui:define name="label">History</ui:define>
+            <h:outputText value="#{personlifeHome.instance.history}"/>
+        </s:decorate>
+
+        <s:decorate id="life" template="layout/display.xhtml">
+            <ui:define name="label">Life</ui:define>
+            <h:outputText value="#{personlifeHome.instance.life}"/>
+        </s:decorate>
+
+        <s:decorate id="living" template="layout/display.xhtml">
+            <ui:define name="label">Living</ui:define>
+            <h:outputText value="#{personlifeHome.instance.living}"/>
+        </s:decorate>
+
+        <s:decorate id="period" template="layout/display.xhtml">
+            <ui:define name="label">Period</ui:define>
+            <h:outputText value="#{personlifeHome.instance.period}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/PersonlifeEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty personlifeFrom ? 'PersonlifeList' : personlifeFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Person</h:panelGroup>
+        </f:facet>
+    <div class="association" id="personParent">
+
+        <h:outputText value="There is no person associated with this personlife."
+                   rendered="#{personlifeHome.instance.person == null}"/>
+
+        <rich:dataTable var="_person"
+                   value="#{personlifeHome.instance.person}"
+                rendered="#{personlifeHome.instance.person != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="personTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_person.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">First</f:facet>
+                <h:outputText value="#{_person.first}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Initials</f:facet>
+                <h:outputText value="#{_person.initials}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Last</f:facet>
+                <h:outputText value="#{_person.last}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Middle</f:facet>
+                <h:outputText value="#{_person.middle}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Nick</f:facet>
+                <h:outputText value="#{_person.nick}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Other</f:facet>
+                <h:outputText value="#{_person.other}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Personlife id</f:facet>
+                <h:outputText value="#{_person.personlife.id}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewperson"
+                     value="View"
+                      view="/Person.xhtml">
+                    <f:param name="personId"
+                           value="#{_person.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

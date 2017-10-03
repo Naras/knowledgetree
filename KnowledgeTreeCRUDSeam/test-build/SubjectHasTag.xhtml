@@ -1,0 +1,125 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Subject has tag Details</f:facet>
+
+        <s:decorate id="subject" template="layout/display.xhtml">
+            <ui:define name="label">Subject</ui:define>
+            <h:outputText value="#{subjectHasTagHome.instance.id.subject}"/>
+        </s:decorate>
+        <s:decorate id="tag" template="layout/display.xhtml">
+            <ui:define name="label">Tag</ui:define>
+            <h:outputText value="#{subjectHasTagHome.instance.id.tag}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/SubjectHasTagEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty subjectHasTagFrom ? 'SubjectHasTagList' : subjectHasTagFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Subject</h:panelGroup>
+        </f:facet>
+    <div class="association" id="subjectParent">
+
+        <h:outputText value="There is no subject associated with this subjectHasTag."
+                   rendered="#{subjectHasTagHome.instance.subject == null}"/>
+
+        <rich:dataTable var="_subject"
+                   value="#{subjectHasTagHome.instance.subject}"
+                rendered="#{subjectHasTagHome.instance.subject != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="subjectTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_subject.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Description</f:facet>
+                <h:outputText value="#{_subject.description}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_subject.name}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewsubject"
+                     value="View"
+                      view="/Subject.xhtml">
+                    <f:param name="subjectId"
+                           value="#{_subject.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/manytoone.gif" style="vertical-align: middle; padding-right: 4px;"/>Tagsubject</h:panelGroup>
+        </f:facet>
+    <div class="association" id="tagsubjectParent">
+
+        <h:outputText value="There is no tagsubject associated with this subjectHasTag."
+                   rendered="#{subjectHasTagHome.instance.tagsubject == null}"/>
+
+        <rich:dataTable var="_tagsubject"
+                   value="#{subjectHasTagHome.instance.tagsubject}"
+                rendered="#{subjectHasTagHome.instance.tagsubject != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="tagsubjectTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tagsubject.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tagsubject.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Tagsubject id</f:facet>
+                <h:outputText value="#{_tagsubject.tagsubject.id}"/>
+            </h:column>
+            <h:column styleClass="action">
+                <f:facet name="header">Action</f:facet>
+                <s:link id="viewtagsubject"
+                     value="View"
+                      view="/Tagsubject.xhtml">
+                    <f:param name="tagsubjectId"
+                           value="#{_tagsubject.id}"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

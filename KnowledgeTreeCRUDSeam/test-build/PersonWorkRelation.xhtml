@@ -1,0 +1,106 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <rich:panel>
+        <f:facet name="header">Person work relation Details</f:facet>
+
+        <s:decorate id="id" template="layout/display.xhtml">
+            <ui:define name="label">Id</ui:define>
+            <h:outputText value="#{personWorkRelationHome.instance.id}"/>
+        </s:decorate>
+
+        <s:decorate id="description" template="layout/display.xhtml">
+            <ui:define name="label">Description</ui:define>
+            <h:outputText value="#{personWorkRelationHome.instance.description}"/>
+        </s:decorate>
+
+        <s:decorate id="name" template="layout/display.xhtml">
+            <ui:define name="label">Name</ui:define>
+            <h:outputText value="#{personWorkRelationHome.instance.name}"/>
+        </s:decorate>
+
+        <div style="clear:both"/>
+
+    </rich:panel>
+
+    <div class="actionButtons">
+
+        <s:button view="/PersonWorkRelationEdit.xhtml"
+                    id="edit"
+                 value="Edit"/>
+
+        <s:button view="/#{empty personWorkRelationFrom ? 'PersonWorkRelationList' : personWorkRelationFrom}.xhtml"
+                    id="done"
+                 value="Done"/>
+
+    </div>
+
+    <rich:tabPanel switchType="ajax">
+
+    <rich:tab>
+        <f:facet name="label">
+            <h:panelGroup><h:graphicImage value="/img/onetomany.gif" style="vertical-align: middle; padding-right: 4px;"/>Person has works</h:panelGroup>
+        </f:facet>
+    <h:form styleClass="association" id="personHasWorksChildren">
+
+        <h:outputText value="There are no personHasWorks associated with this personWorkRelation."
+                   rendered="#{empty personWorkRelationHome.personHasWorks}"/>
+
+        <rich:dataTable value="#{personWorkRelationHome.personHasWorks}"
+                       var="_personHasWork"
+                  rendered="#{not empty personWorkRelationHome.personHasWorks}"
+                rowClasses="rvgRowOne,rvgRowTwo"
+                        id="personHasWorksTable">
+            <rich:column sortBy="#{_personHasWork.id.person}">
+                <f:facet name="header">Person</f:facet>
+                <h:outputText value="#{_personHasWork.id.person}"/>
+            </rich:column>
+            <rich:column sortBy="#{_personHasWork.id.relation}">
+                <f:facet name="header">Relation</f:facet>
+                <h:outputText value="#{_personHasWork.id.relation}"/>
+            </rich:column>
+            <rich:column sortBy="#{_personHasWork.id.work}">
+                <f:facet name="header">Work</f:facet>
+                <h:outputText value="#{_personHasWork.id.work}"/>
+            </rich:column>
+            <h:column>
+                <f:facet name="header">Action</f:facet>
+                <s:link id="selectpersonHasWork"
+                     value="Select"
+                      view="/PersonHasWork.xhtml">
+                    <f:param name="personHasWorkPerson"
+                            value="#{_personHasWork.id.person}"/>
+                    <f:param name="personHasWorkRelation"
+                            value="#{_personHasWork.id.relation}"/>
+                    <f:param name="personHasWorkWork"
+                            value="#{_personHasWork.id.work}"/>
+                    <f:param name="personHasWorkFrom" value="PersonWorkRelation"/>
+                </s:link>
+            </h:column>
+        </rich:dataTable>
+
+    </h:form>
+
+    <div class="actionButtons">
+        <s:button
+               value="Add personHasWork"
+                view="/PersonHasWorkEdit.xhtml">
+            <f:param name="personWorkRelationId"
+                    value="#{personWorkRelationHome.instance.id}"/>
+            <f:param name="personHasWorkFrom" value="PersonWorkRelation"/>
+        </s:button>
+    </div>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

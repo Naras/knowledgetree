@@ -1,0 +1,262 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="subject" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{subjectHome.managed ? 'Edit' : 'Add'} Subject</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{subjectHome.managed}"
+                       required="true"
+                           size="20"
+                      maxlength="20"
+                          value="#{subjectHome.instance.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="descriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Description</ui:define>
+                <h:inputTextarea id="description"
+                               cols="80"
+                               rows="10"
+                              value="#{subjectHome.instance.description}"/>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                       required="true"
+                           size="30"
+                      maxlength="30"
+                          value="#{subjectHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{subjectHome.persist}"
+                       disabled="#{!subjectHome.wired}"
+                       rendered="#{!subjectHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{subjectHome.update}"
+                       rendered="#{subjectHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{subjectHome.remove}"
+                      immediate="true"
+                       rendered="#{subjectHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Subject.xhtml"
+                rendered="#{subjectHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty subjectFrom ? 'SubjectList' : subjectFrom}.xhtml"
+                rendered="#{!subjectHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Subject has tags">
+        <h:form styleClass="association" id="subjectHasTagsChildren">
+
+            <h:outputText value="There are no subjectHasTags associated with this subject."
+                       rendered="#{empty subjectHome.subjectHasTags}"/>
+
+            <rich:dataTable value="#{subjectHome.subjectHasTags}"
+                           var="_subjectHasTag"
+                      rendered="#{not empty subjectHome.subjectHasTags}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectHasTagsTable">
+                <rich:column sortBy="#{_subjectHasTag.id.subject}">
+                    <f:facet name="header">Subject</f:facet>
+                    <h:outputText value="#{_subjectHasTag.id.subject}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasTag.id.tag}">
+                    <f:facet name="header">Tag</f:facet>
+                    <h:outputText value="#{_subjectHasTag.id.tag}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{subjectHome.managed}" id="subjectHasTags">
+        <div class="actionButtons">
+            <s:button id="addsubjectHasTag"
+                   value="Add subjectHasTag"
+                    view="/SubjectHasTagEdit.xhtml"
+             propagation="none">
+                 <f:param name="subjectId"
+                         value="#{subjectHome.instance.id}"/>
+                 <f:param name="subjectHasTagFrom" value="Subject"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Subject has works">
+        <h:form styleClass="association" id="subjectHasWorksChildren">
+
+            <h:outputText value="There are no subjectHasWorks associated with this subject."
+                       rendered="#{empty subjectHome.subjectHasWorks}"/>
+
+            <rich:dataTable value="#{subjectHome.subjectHasWorks}"
+                           var="_subjectHasWork"
+                      rendered="#{not empty subjectHome.subjectHasWorks}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectHasWorksTable">
+                <rich:column sortBy="#{_subjectHasWork.id.relation}">
+                    <f:facet name="header">Relation</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.relation}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.subject}">
+                    <f:facet name="header">Subject</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.subject}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{subjectHome.managed}" id="subjectHasWorks">
+        <div class="actionButtons">
+            <s:button id="addsubjectHasWork"
+                   value="Add subjectHasWork"
+                    view="/SubjectHasWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="subjectId"
+                         value="#{subjectHome.instance.id}"/>
+                 <f:param name="subjectHasWorkFrom" value="Subject"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Subject relatesto subjects for subject1">
+        <h:form styleClass="association" id="subjectRelatestoSubjectsForSubject1Children">
+
+            <h:outputText value="There are no subjectRelatestoSubjectsForSubject1 associated with this subject."
+                       rendered="#{empty subjectHome.subjectRelatestoSubjectsForSubject1}"/>
+
+            <rich:dataTable value="#{subjectHome.subjectRelatestoSubjectsForSubject1}"
+                           var="_subjectRelatestoSubject"
+                      rendered="#{not empty subjectHome.subjectRelatestoSubjectsForSubject1}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectRelatestoSubjectsForSubject1Table">
+                <rich:column sortBy="#{_subjectRelatestoSubject.id.subject1}">
+                    <f:facet name="header">Subject1</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.id.subject1}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectRelatestoSubject.id.subject2}">
+                    <f:facet name="header">Subject2</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.id.subject2}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectRelatestoSubject.sortorder}">
+                    <f:facet name="header">Sortorder</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.sortorder}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{subjectHome.managed}" id="subjectRelatestoSubjectsForSubject1">
+        <div class="actionButtons">
+            <s:button id="addsubjectRelatestoSubject"
+                   value="Add subjectRelatestoSubject"
+                    view="/SubjectRelatestoSubjectEdit.xhtml"
+             propagation="none">
+                 <f:param name="subjectId"
+                         value="#{subjectHome.instance.id}"/>
+                 <f:param name="subjectRelatestoSubjectFrom" value="Subject"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Subject relatesto subjects for subject2">
+        <h:form styleClass="association" id="subjectRelatestoSubjectsForSubject2Children">
+
+            <h:outputText value="There are no subjectRelatestoSubjectsForSubject2 associated with this subject."
+                       rendered="#{empty subjectHome.subjectRelatestoSubjectsForSubject2}"/>
+
+            <rich:dataTable value="#{subjectHome.subjectRelatestoSubjectsForSubject2}"
+                           var="_subjectRelatestoSubject"
+                      rendered="#{not empty subjectHome.subjectRelatestoSubjectsForSubject2}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectRelatestoSubjectsForSubject2Table">
+                <rich:column sortBy="#{_subjectRelatestoSubject.id.subject1}">
+                    <f:facet name="header">Subject1</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.id.subject1}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectRelatestoSubject.id.subject2}">
+                    <f:facet name="header">Subject2</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.id.subject2}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectRelatestoSubject.sortorder}">
+                    <f:facet name="header">Sortorder</f:facet>
+                    <h:outputText value="#{_subjectRelatestoSubject.sortorder}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{subjectHome.managed}" id="subjectRelatestoSubjectsForSubject2">
+        <div class="actionButtons">
+            <s:button id="addsubjectRelatestoSubject"
+                   value="Add subjectRelatestoSubject"
+                    view="/SubjectRelatestoSubjectEdit.xhtml"
+             propagation="none">
+                 <f:param name="subjectId"
+                         value="#{subjectHome.instance.id}"/>
+                 <f:param name="subjectRelatestoSubjectFrom" value="Subject"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

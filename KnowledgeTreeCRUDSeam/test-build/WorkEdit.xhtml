@@ -1,0 +1,387 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="work" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{workHome.managed ? 'Edit' : 'Add'} Work</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputText id="id"
+                       disabled="#{workHome.managed}"
+                       required="true"
+                           size="20"
+                      maxlength="20"
+                          value="#{workHome.instance.id}">
+                    <a:support event="onblur" reRender="idField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+            <s:decorate id="descriptionField" template="layout/edit.xhtml">
+                <ui:define name="label">Description</ui:define>
+                <h:inputTextarea id="description"
+                               cols="80"
+                               rows="10"
+                              value="#{workHome.instance.description}"/>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="45"
+                      maxlength="45"
+                          value="#{workHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+
+
+
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{workHome.persist}"
+                       disabled="#{!workHome.wired}"
+                       rendered="#{!workHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{workHome.update}"
+                       rendered="#{workHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{workHome.remove}"
+                      immediate="true"
+                       rendered="#{workHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Work.xhtml"
+                rendered="#{workHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty workFrom ? 'WorkList' : workFrom}.xhtml"
+                rendered="#{!workHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Person has works">
+        <h:form styleClass="association" id="personHasWorksChildren">
+
+            <h:outputText value="There are no personHasWorks associated with this work."
+                       rendered="#{empty workHome.personHasWorks}"/>
+
+            <rich:dataTable value="#{workHome.personHasWorks}"
+                           var="_personHasWork"
+                      rendered="#{not empty workHome.personHasWorks}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="personHasWorksTable">
+                <rich:column sortBy="#{_personHasWork.id.person}">
+                    <f:facet name="header">Person</f:facet>
+                    <h:outputText value="#{_personHasWork.id.person}"/>
+                </rich:column>
+                <rich:column sortBy="#{_personHasWork.id.relation}">
+                    <f:facet name="header">Relation</f:facet>
+                    <h:outputText value="#{_personHasWork.id.relation}"/>
+                </rich:column>
+                <rich:column sortBy="#{_personHasWork.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_personHasWork.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="personHasWorks">
+        <div class="actionButtons">
+            <s:button id="addpersonHasWork"
+                   value="Add personHasWork"
+                    view="/PersonHasWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="personHasWorkFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Subject has works">
+        <h:form styleClass="association" id="subjectHasWorksChildren">
+
+            <h:outputText value="There are no subjectHasWorks associated with this work."
+                       rendered="#{empty workHome.subjectHasWorks}"/>
+
+            <rich:dataTable value="#{workHome.subjectHasWorks}"
+                           var="_subjectHasWork"
+                      rendered="#{not empty workHome.subjectHasWorks}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="subjectHasWorksTable">
+                <rich:column sortBy="#{_subjectHasWork.id.relation}">
+                    <f:facet name="header">Relation</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.relation}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.subject}">
+                    <f:facet name="header">Subject</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.subject}"/>
+                </rich:column>
+                <rich:column sortBy="#{_subjectHasWork.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_subjectHasWork.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="subjectHasWorks">
+        <div class="actionButtons">
+            <s:button id="addsubjectHasWork"
+                   value="Add subjectHasWork"
+                    view="/SubjectHasWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="subjectHasWorkFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work has tags">
+        <h:form styleClass="association" id="workHasTagsChildren">
+
+            <h:outputText value="There are no workHasTags associated with this work."
+                       rendered="#{empty workHome.workHasTags}"/>
+
+            <rich:dataTable value="#{workHome.workHasTags}"
+                           var="_workHasTag"
+                      rendered="#{not empty workHome.workHasTags}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workHasTagsTable">
+                <rich:column sortBy="#{_workHasTag.id.tag}">
+                    <f:facet name="header">Tag</f:facet>
+                    <h:outputText value="#{_workHasTag.id.tag}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workHasTag.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_workHasTag.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="workHasTags">
+        <div class="actionButtons">
+            <s:button id="addworkHasTag"
+                   value="Add workHasTag"
+                    view="/WorkHasTagEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="workHasTagFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work in languages">
+        <h:form styleClass="association" id="workInLanguagesChildren">
+
+            <h:outputText value="There are no workInLanguages associated with this work."
+                       rendered="#{empty workHome.workInLanguages}"/>
+
+            <rich:dataTable value="#{workHome.workInLanguages}"
+                           var="_workInLanguage"
+                      rendered="#{not empty workHome.workInLanguages}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workInLanguagesTable">
+                <rich:column sortBy="#{_workInLanguage.id.language}">
+                    <f:facet name="header">Language</f:facet>
+                    <h:outputText value="#{_workInLanguage.id.language}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInLanguage.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_workInLanguage.id.work}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInLanguage.location}">
+                    <f:facet name="header">Location</f:facet>
+                    <h:outputText value="#{_workInLanguage.location}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="workInLanguages">
+        <div class="actionButtons">
+            <s:button id="addworkInLanguage"
+                   value="Add workInLanguage"
+                    view="/WorkInLanguageEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="workInLanguageFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work in scripts">
+        <h:form styleClass="association" id="workInScriptsChildren">
+
+            <h:outputText value="There are no workInScripts associated with this work."
+                       rendered="#{empty workHome.workInScripts}"/>
+
+            <rich:dataTable value="#{workHome.workInScripts}"
+                           var="_workInScript"
+                      rendered="#{not empty workHome.workInScripts}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workInScriptsTable">
+                <rich:column sortBy="#{_workInScript.id.script}">
+                    <f:facet name="header">Script</f:facet>
+                    <h:outputText value="#{_workInScript.id.script}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInScript.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_workInScript.id.work}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workInScript.location}">
+                    <f:facet name="header">Location</f:facet>
+                    <h:outputText value="#{_workInScript.location}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="workInScripts">
+        <div class="actionButtons">
+            <s:button id="addworkInScript"
+                   value="Add workInScript"
+                    view="/WorkInScriptEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="workInScriptFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work relatesto works for work1">
+        <h:form styleClass="association" id="workRelatestoWorksForWork1Children">
+
+            <h:outputText value="There are no workRelatestoWorksForWork1 associated with this work."
+                       rendered="#{empty workHome.workRelatestoWorksForWork1}"/>
+
+            <rich:dataTable value="#{workHome.workRelatestoWorksForWork1}"
+                           var="_workRelatestoWork"
+                      rendered="#{not empty workHome.workRelatestoWorksForWork1}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workRelatestoWorksForWork1Table">
+                <rich:column sortBy="#{_workRelatestoWork.id.work1}">
+                    <f:facet name="header">Work1</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.id.work1}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workRelatestoWork.id.work2}">
+                    <f:facet name="header">Work2</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.id.work2}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workRelatestoWork.sortorder}">
+                    <f:facet name="header">Sortorder</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.sortorder}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="workRelatestoWorksForWork1">
+        <div class="actionButtons">
+            <s:button id="addworkRelatestoWork"
+                   value="Add workRelatestoWork"
+                    view="/WorkRelatestoWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="workRelatestoWorkFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work relatesto works for work2">
+        <h:form styleClass="association" id="workRelatestoWorksForWork2Children">
+
+            <h:outputText value="There are no workRelatestoWorksForWork2 associated with this work."
+                       rendered="#{empty workHome.workRelatestoWorksForWork2}"/>
+
+            <rich:dataTable value="#{workHome.workRelatestoWorksForWork2}"
+                           var="_workRelatestoWork"
+                      rendered="#{not empty workHome.workRelatestoWorksForWork2}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workRelatestoWorksForWork2Table">
+                <rich:column sortBy="#{_workRelatestoWork.id.work1}">
+                    <f:facet name="header">Work1</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.id.work1}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workRelatestoWork.id.work2}">
+                    <f:facet name="header">Work2</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.id.work2}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workRelatestoWork.sortorder}">
+                    <f:facet name="header">Sortorder</f:facet>
+                    <h:outputText value="#{_workRelatestoWork.sortorder}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{workHome.managed}" id="workRelatestoWorksForWork2">
+        <div class="actionButtons">
+            <s:button id="addworkRelatestoWork"
+                   value="Add workRelatestoWork"
+                    view="/WorkRelatestoWorkEdit.xhtml"
+             propagation="none">
+                 <f:param name="workId"
+                         value="#{workHome.instance.id}"/>
+                 <f:param name="workRelatestoWorkFrom" value="Work"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

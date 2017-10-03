@@ -1,0 +1,153 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="tag" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{tagHome.managed ? 'Edit' : 'Add'} Tag</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputTextarea id="id"
+                               cols="80"
+                               rows="3"
+                           disabled="#{tagHome.managed}"
+                           required="true"
+                              value="#{tagHome.instance.id}"/>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="30"
+                      maxlength="30"
+                          value="#{tagHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{tagHome.persist}"
+                       disabled="#{!tagHome.wired}"
+                       rendered="#{!tagHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{tagHome.update}"
+                       rendered="#{tagHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{tagHome.remove}"
+                      immediate="true"
+                       rendered="#{tagHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Tag.xhtml"
+                rendered="#{tagHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty tagFrom ? 'TagList' : tagFrom}.xhtml"
+                rendered="#{!tagHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Tag">
+    <div class="association" id="tagParent">
+
+        <h:outputText value="There is no tag associated with this tag."
+                   rendered="#{tagHome.instance.tag == null}"/>
+
+        <rich:dataTable var="_tag"
+                   value="#{tagHome.instance.tag}"
+                rendered="#{tagHome.instance.tag != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="tagTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tag.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tag.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Tag id</f:facet>
+                <h:outputText value="#{_tag.tag.id}"/>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab label="Tags">
+        <h:form styleClass="association" id="tagsChildren">
+
+            <h:outputText value="There are no tags associated with this tag."
+                       rendered="#{empty tagHome.tags}"/>
+
+            <rich:dataTable value="#{tagHome.tags}"
+                           var="_tag"
+                      rendered="#{not empty tagHome.tags}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="tagsTable">
+                <rich:column sortBy="#{_tag.id}">
+                    <f:facet name="header">Id</f:facet>
+                    <h:outputText value="#{_tag.id}"/>
+                </rich:column>
+                <rich:column sortBy="#{_tag.name}">
+                    <f:facet name="header">Name</f:facet>
+                    <h:outputText value="#{_tag.name}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{tagHome.managed}" id="tags">
+        <div class="actionButtons">
+            <s:button id="addtag"
+                   value="Add tag"
+                    view="/TagEdit.xhtml"
+             propagation="none">
+                 <f:param name="tagId"
+                         value="#{tagHome.instance.id}"/>
+                 <f:param name="tagFrom" value="Tag"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>

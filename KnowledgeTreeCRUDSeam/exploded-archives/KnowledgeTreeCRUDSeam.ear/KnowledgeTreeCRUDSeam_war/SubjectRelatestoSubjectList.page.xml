@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns="http://jboss.com/products/seam/pages"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://jboss.com/products/seam/pages http://jboss.com/products/seam/pages-2.2.xsd">
+
+   <param name="firstResult" value="#{subjectRelatestoSubjectList.firstResult}"/>
+   <param name="sort" value="#{subjectRelatestoSubjectList.orderColumn}"/>
+   <param name="dir" value="#{subjectRelatestoSubjectList.orderDirection}"/>
+   <param name="logic" value="#{subjectRelatestoSubjectList.restrictionLogicOperator}"/>
+
+   <param name="from"/>
+   <param name="subject1" value="#{subjectRelatestoSubjectList.subjectRelatestoSubject.id.subject1}"/>
+   <param name="subject2" value="#{subjectRelatestoSubjectList.subjectRelatestoSubject.id.subject2}"/>
+
+</page>

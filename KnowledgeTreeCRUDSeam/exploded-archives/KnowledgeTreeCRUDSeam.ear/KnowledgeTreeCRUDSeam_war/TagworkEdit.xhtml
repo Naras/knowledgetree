@@ -1,0 +1,191 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:s="http://jboss.com/products/seam/taglib"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:a="http://richfaces.org/a4j"
+    xmlns:rich="http://richfaces.org/rich"
+    template="layout/template.xhtml">
+
+<ui:define name="body">
+
+    <h:form id="tagwork" styleClass="edit">
+
+        <rich:panel>
+            <f:facet name="header">#{tagworkHome.managed ? 'Edit' : 'Add'} Tagwork</f:facet>
+
+
+            <s:decorate id="idField" template="layout/edit.xhtml">
+                <ui:define name="label">Id</ui:define>
+                <h:inputTextarea id="id"
+                               cols="80"
+                               rows="3"
+                           disabled="#{tagworkHome.managed}"
+                           required="true"
+                              value="#{tagworkHome.instance.id}"/>
+            </s:decorate>
+
+
+            <s:decorate id="nameField" template="layout/edit.xhtml">
+                <ui:define name="label">Name</ui:define>
+                <h:inputText id="name"
+                           size="30"
+                      maxlength="30"
+                          value="#{tagworkHome.instance.name}">
+                    <a:support event="onblur" reRender="nameField" bypassUpdates="true" ajaxSingle="true"/>
+                </h:inputText>
+            </s:decorate>
+
+
+
+
+            <div style="clear:both">
+                <span class="required">*</span>
+                required fields
+            </div>
+
+        </rich:panel>
+
+        <div class="actionButtons">
+
+            <h:commandButton id="save"
+                          value="Save"
+                         action="#{tagworkHome.persist}"
+                       disabled="#{!tagworkHome.wired}"
+                       rendered="#{!tagworkHome.managed}"/>
+
+            <h:commandButton id="update"
+                          value="Save"
+                         action="#{tagworkHome.update}"
+                       rendered="#{tagworkHome.managed}"/>
+
+            <h:commandButton id="delete"
+                          value="Delete"
+                         action="#{tagworkHome.remove}"
+                      immediate="true"
+                       rendered="#{tagworkHome.managed}"/>
+
+            <s:button id="cancelEdit"
+                   value="Cancel"
+             propagation="end"
+                    view="/Tagwork.xhtml"
+                rendered="#{tagworkHome.managed}"/>
+
+            <s:button id="cancelAdd"
+                   value="Cancel"
+             propagation="end"
+                    view="/#{empty tagworkFrom ? 'TagworkList' : tagworkFrom}.xhtml"
+                rendered="#{!tagworkHome.managed}"/>
+
+        </div>
+    </h:form>
+
+<rich:tabPanel switchType="ajax">
+
+    <rich:tab label="Tagwork">
+    <div class="association" id="tagworkParent">
+
+        <h:outputText value="There is no tagwork associated with this tagwork."
+                   rendered="#{tagworkHome.instance.tagwork == null}"/>
+
+        <rich:dataTable var="_tagwork"
+                   value="#{tagworkHome.instance.tagwork}"
+                rendered="#{tagworkHome.instance.tagwork != null}"
+              rowClasses="rvgRowOne,rvgRowTwo"
+                      id="tagworkTable">
+            <h:column>
+                <f:facet name="header">Id</f:facet>
+                <h:outputText value="#{_tagwork.id}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Name</f:facet>
+                <h:outputText value="#{_tagwork.name}"/>
+            </h:column>
+            <h:column>
+                <f:facet name="header">Tagwork id</f:facet>
+                <h:outputText value="#{_tagwork.tagwork.id}"/>
+            </h:column>
+        </rich:dataTable>
+
+    </div>
+    </rich:tab>
+
+    <rich:tab label="Tagworks">
+        <h:form styleClass="association" id="tagworksChildren">
+
+            <h:outputText value="There are no tagworks associated with this tagwork."
+                       rendered="#{empty tagworkHome.tagworks}"/>
+
+            <rich:dataTable value="#{tagworkHome.tagworks}"
+                           var="_tagwork"
+                      rendered="#{not empty tagworkHome.tagworks}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="tagworksTable">
+                <rich:column sortBy="#{_tagwork.id}">
+                    <f:facet name="header">Id</f:facet>
+                    <h:outputText value="#{_tagwork.id}"/>
+                </rich:column>
+                <rich:column sortBy="#{_tagwork.name}">
+                    <f:facet name="header">Name</f:facet>
+                    <h:outputText value="#{_tagwork.name}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{tagworkHome.managed}" id="tagworks">
+        <div class="actionButtons">
+            <s:button id="addtagwork"
+                   value="Add tagwork"
+                    view="/TagworkEdit.xhtml"
+             propagation="none">
+                 <f:param name="tagworkId"
+                         value="#{tagworkHome.instance.id}"/>
+                 <f:param name="tagworkFrom" value="Tagwork"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+
+    <rich:tab label="Work has tags">
+        <h:form styleClass="association" id="workHasTagsChildren">
+
+            <h:outputText value="There are no workHasTags associated with this tagwork."
+                       rendered="#{empty tagworkHome.workHasTags}"/>
+
+            <rich:dataTable value="#{tagworkHome.workHasTags}"
+                           var="_workHasTag"
+                      rendered="#{not empty tagworkHome.workHasTags}"
+                    rowClasses="rvgRowOne,rvgRowTwo"
+                            id="workHasTagsTable">
+                <rich:column sortBy="#{_workHasTag.id.tag}">
+                    <f:facet name="header">Tag</f:facet>
+                    <h:outputText value="#{_workHasTag.id.tag}"/>
+                </rich:column>
+                <rich:column sortBy="#{_workHasTag.id.work}">
+                    <f:facet name="header">Work</f:facet>
+                    <h:outputText value="#{_workHasTag.id.work}"/>
+                </rich:column>
+            </rich:dataTable>
+
+        </h:form>
+
+        <f:subview rendered="#{tagworkHome.managed}" id="workHasTags">
+        <div class="actionButtons">
+            <s:button id="addworkHasTag"
+                   value="Add workHasTag"
+                    view="/WorkHasTagEdit.xhtml"
+             propagation="none">
+                 <f:param name="tagworkId"
+                         value="#{tagworkHome.instance.id}"/>
+                 <f:param name="workHasTagFrom" value="Tagwork"/>
+            </s:button>
+        </div>
+        </f:subview>
+    </rich:tab>
+</rich:tabPanel>
+</ui:define>
+
+</ui:composition>
