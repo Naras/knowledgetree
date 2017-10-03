@@ -62,6 +62,12 @@
         <!--<input type="checkbox" id="displayWorkTree" name="displayWorkTree"> Display Subject Tree (uncheck for Display Work Tree)-->
         <input type="radio" id="subject" name="displayTree" onclick="handleClick(this);" value="Subject" checked>Prameya
         <input type="radio" id="work" name="displayTree" onclick="handleClick(this);" value="Work">PramaaNa
+        <input type="radio" id="person" name="displayTree" onclick="handleClick(this);" value="Person">Pramatha
+        <label>Search
+                  <input type="text" list="SearchList" class="inputName" id='Search' placeholder="Search ??" />
+              </label>
+        <datalist id="SearchList">
+                </datalist>
     </FORM>
     <!--<FORM NAME="url">
         <INPUT TYPE="button" NAME="restService" id="restServiceUrl">
@@ -72,290 +78,455 @@
         <form id="ViewNodeForm">
             <div class="row">
                 <div class="large-12 columns">
-                    <label>Node id
-                  <input type="text" class="inputName" id='ViewNodeId' placeholder="node id" disabled="true" />
-                    <label>Node name
-                  <input type="text" class="inputName" id='ViewNodeName' placeholder="node name"  disabled="true"/>
-                     <label>Node order
-                  <input type="text" class="inputName" id='ViewNodeOrder' placeholder="node order" />
-                     <label>Node description
-                  <!--<input type="text" class="inputName" id='ViewNodeDescription' placeholder="node description" />-->
-                        <textarea id="ViewNodeDescription" class="inputName" placeholder="node description" rows="10" disabled="true"></textarea>
-                <label>Node relation
+                    <div id="ViewPersonsElements">
+                        <label>First name
+                                    <input type="text" class="inputName" id='ViewNodeFirst' placeholder="first name" onchange="generateIni()"/>
+                                <label>Middle name 
+                                    <input type="text" class="inputName" id='ViewNodeMiddle' placeholder="middle name" onchange="generateIni()"/>
+                                <label>Last name 
+                                        <input type="text" class="inputName" id='ViewNodeLast' placeholder="lasst name" onchange="generateIni()"/>
+                                <label>Initials 
+                                        <input type="text" class="inputName" id='ViewNodeInitials' placeholder="initials" onchange="generateIdIni()"/>
+                                <label>Nick  
+                                    <input type="text" class="inputName" id='ViewNodeNick' placeholder="nick name"/>
+                                <label>Other 
+                                    <input type="text" class="inputName" id='ViewNodeOther' placeholder="nick name"/></label>
+                        <label>Node id
+                                        <input type="text" class="inputName" id='ViewNodeId' placeholder="node id" />
+                                    </div>
+                            <div id="ViewSubjectsElements">
+                                <label>Node name
+                                    <input type="text" class="inputName" id='ViewNodeName' placeholder="node name" onchange="generateId()"/>
+                                <label>Node id
+                                    <input type="text" class="inputName" id='ViewNodeId' placeholder="node id" />
+                                <label>Node order
+                                    <input type="text" class="inputName" id='ViewNodeOrder' placeholder="node order" />
+                            <label>Node description
+                                     <textarea id="ViewNodeDescription" class="inputName" placeholder="node description" rows="10"></textarea>
+                          </div>
+                        <label>Node relation
                   <input type="text" class="inputName" id='ViewNodeRelation' placeholder="node relation"  disabled="true"/>
               </label>
+                    </div>
                 </div>
-            </div>
         </form>
         <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-    </div>
+        </div>
 
-    <div id="RenameNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
-        <h2 id="modalTitle">Edit Node</h2>
-        <form id="RenameNodeForm">
-            <div class="row">
-                <div class="large-12 columns">
-                    <label>Node id
-                  <input type="text" class="inputName" id='RenameNodeId' placeholder="node id" disabled="true" />
-                             <label>Node name
-                  <input type="text" class="inputName" id='RenameNodeName' placeholder="node name" />
-                    <label>Node order
-                  <input type="text" class="inputName" id='RenameNodeOrder' placeholder="node order" />
-                      <label>Node description
-                  <!--<input type="text" class="inputName" id='RenameNodeDescription' placeholder="node description" />-->
-                        <textarea id="RenameNodeDescription" class="inputName" placeholder="node description" rows="10"></textarea>
-                <label>Node relation
+        <div id="RenameNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+            <h2 id="modalTitle">Edit Node</h2>
+            <form id="RenameNodeForm">
+                <div class="row">
+                    <div class="large-12 columns">
+                        <div id="RenamePersonsElements">
+                            <label>First name
+                                    <input type="text" class="inputName" id='RenameNodeFirst' placeholder="first name" onchange="generateIni()"/>
+                                <label>Middle name 
+                                    <input type="text" class="inputName" id='RenameNodeMiddle' placeholder="middle name" onchange="generateIni()"/>
+                                <label>Last name 
+                                        <input type="text" class="inputName" id='RenameNodeLast' placeholder="lasst name" onchange="generateIni()"/>
+                                <label>Initials 
+                                        <input type="text" class="inputName" id='RenameNodeInitials' placeholder="initials" onchange="generateIdIni()"/>
+                                <label>Nick  name
+                                    <input type="text" class="inputName" id='RenameNodeNick' placeholder="nick name"/>
+                                <label>Other name
+                                    <input type="text" class="inputName" id='RenameNodeOther' placeholder="other name"/></label>
+                            <label>Node id
+                                        <input type="text" class="inputName" id='RenameNodeId2' placeholder="node id" />
+                        </div>
+                        <div id="RenameSubjectsElements">
+                                <label>Node name
+                                    <input type="text" class="inputName" id='RenameNodeName' placeholder="node name" onchange="generateId()"/>
+                                <label>Node id
+                                    <input type="text" class="inputName" id='RenameNodeId1' placeholder="node id" />
+                                <label>Node order
+                                    <input type="text" class="inputName" id='RenameNodeOrder' placeholder="node order" />
+                            <label>Node description
+                                     <textarea id="RenameNodeDescription" class="inputName" placeholder="node description" rows="10"></textarea>
+                        </div>
+                        <label>Node relation
                   <input type="text" list="renameRelationList" class="inputName" id='RenameNodeRelation' placeholder="node relation" />
               </label>
-                    <datalist id="renameRelationList">
+                            <datalist id="renameRelationList">
                 </datalist>
-                </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="large-8 columns">
+                            &nbsp;
+                        </div>
+                        <div class="large-4 columns">
+                            <!--<a href="#" class="button info" onclick="close_rename_node_modal()">Cancel</a>-->
+                            <a href="#" class="button success" onclick="rename_node()">Update</a>
+                        </div>
+                    </div>
+            </form>
+            <a class="close-reveal-modal" aria-label="Close">&#215;</a>
             </div>
-            <div class="row">
-                <div class="large-8 columns">
-                    &nbsp;
-                </div>
-                <div class="large-4 columns">
-                    <!--<a href="#" class="button info" onclick="close_rename_node_modal()">Cancel</a>-->
-                    <a href="#" class="button success" onclick="rename_node()">Update</a>
-                </div>
-            </div>
-        </form>
-        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-    </div>
 
-    <div id="CreateNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
-        <h2 id="modalTitle">Create Node</h2>
-        <form id="CreateNodeForm">
-            <div class="row">
-                <div class="large-12 columns">
-                    <label>Node name
-                  <input type="text" class="inputName" id='CreateNodeName' placeholder="node name" onchange="generateId()"/>
-                    <label>Node id
-                  <input type="text" class="inputName" id='CreateNodeId' placeholder="node id" />
-                    <label>Node order
-                  <input type="text" class="inputName" id='CreateNodeOrder' placeholder="node order" />
-                      <label>Node description
-                  <textarea id="CreateNodeDescription" class="inputName" placeholder="node description" rows="10"></textarea>
-                      <label>Node relation
+            <div id="CreateNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+                <h2 id="modalTitle">Create Node</h2>
+                <form id="CreateNodeForm">
+                    <div class="row">
+                        <div class="large-12 columns">
+                            <div id="CreatePersonsElements">
+                                <label>First name
+                                <input type="text" class="inputName" id='CreateNodeFirst' placeholder="first name" onchange="generateIni()"/>
+                                <label>Middle name 
+                                <input type="text" class="inputName" id='CreateNodeMiddle' placeholder="middle name" onchange="generateIni()"/>
+                                <label>Last name 
+                                <input type="text" class="inputName" id='CreateNodeLast' placeholder="last name" onchange="generateIni()"/>
+                                <label>Initials 
+                                <input type="text" class="inputName" id='CreateNodeInitials' placeholder="initials" onchange="generateIdIni()"/>
+                               <label>Nick name 
+                                <input type="text" class="inputName" id='CreateNodeNick' placeholder="nick name"/>
+                                <label>Other name
+                               <input type="text" class="inputName" id='CreateNodeOther' placeholder="other name"/></label>
+                                <label>Node id
+                                <input type="text" class="inputName" id='CreateNodeId2' placeholder="node id" />
+                            </div>
+                    <div id="CreateSubjectsElements">
+                        <label>Node name
+                        <input type="text" class="inputName" id='CreateNodeName' placeholder="node name" onchange="generateId()"/>
+                        <label>Node id
+                        <input type="text" class="inputName" id='CreateNodeId1' placeholder="node id" />
+                        <label>Node order
+                        <input type="text" class="inputName" id='CreateNodeOrder' placeholder="node order" />
+                         <label>Node description
+                        <textarea id="CreateNodeDescription" class="inputName" placeholder="node description" rows="10"></textarea>
+                    </div>
+                <label>Node relation
                   <input type="text" list="createRelationList" class="inputName" id='CreateNodeRelation' placeholder="node relation" />
               </label>
-                    <datalist id="createRelationList">
+                                <datalist id="createRelationList">
                 </datalist>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-8 columns">
+                                &nbsp;
+                            </div>
+                            <div class="large-4 columns">
+                                <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
+                                <a href="#" class="button success" onclick="create_node()">Create</a>
+                            </div>
+                        </div>
+                </form>
+                <a class="close-reveal-modal" aria-label="Close">&#215;</a>
                 </div>
-            </div>
-            <div class="row">
-                <div class="large-8 columns">
-                    &nbsp;
-                </div>
-                <div class="large-4 columns">
-                    <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
-                    <a href="#" class="button success" onclick="create_node()">Create</a>
-                </div>
-            </div>
-        </form>
-        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-    </div>
 
-    <div id="MoveNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
-        <h2 id="modalTitle">Move Node</h2>
-        <form id="MoveNodeForm">
-            <div class="row">
-                <div class="large-12 columns">
-                    <label>Node id
-                  <input type="text" class="inputName" id='MoveNodeId' placeholder="node id" />
-                    <label>Node Order
-                  <input type="text" class="inputName" id='MoveNodeOrder' placeholder="node order" />
-                    <label> New Parent Node
-                  <input type="text" list="MoveParentList" class="inputName" id='MoveParentNode' placeholder="parent node list" />
-              </label>
-                    <datalist id="MoveParentList">
-                </datalist>
+                <div id="MoveNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+                    <h2 id="modalTitle">Move Node</h2>
+                    <form id="MoveNodeForm">
+                        <div class="row">
+                            <div class="large-12 columns">
+                                <label>Node id
+                        <input type="text" class="inputName" id='MoveNodeId' placeholder="node id" />
+                        <label>Node Order
+                        <input type="text" class="inputName" id='MoveNodeOrder' placeholder="node order" />
+                        <label> New Parent Node
+                        <input type="text" list="MoveParentList" class="inputName" id='MoveParentNode' placeholder="parent node list" />
+                    </label>
+                                <datalist id="MoveParentList">
+                    </datalist>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-8 columns">
+                                &nbsp;
+                            </div>
+                            <div class="large-4 columns">
+                                <!--<a href="#" class="button info" onclick="close_move_node_modal()">Cancel</a>-->
+                                <a href="#" class="button success" onclick="move_node()">Move</a>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="close-reveal-modal" aria-label="Close">&#215;</a>
                 </div>
-            </div>
-            <div class="row">
-                <div class="large-8 columns">
-                    &nbsp;
-                </div>
-                <div class="large-4 columns">
-                    <!--<a href="#" class="button info" onclick="close_move_node_modal()">Cancel</a>-->
-                    <a href="#" class="button success" onclick="move_node()">Move</a>
-                </div>
-            </div>
-        </form>
-        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-    </div>
 
-    <div id="ConnectNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle_Connect" aria-hidden="true" role="dialog">
-        <h2 id="modalTitle_Connect">Connect Node</h2>
-        <form id="CreateWorkNodeForm">
-            <div class="row">
-                <div class="large-12 columns">
-                    <label>Subject Node Id
-                  <input type="text" list="list_create_subject" class="inputName" id='ConnectSubjectNode' placeholder="Prameya node id" disabled />
-                    <datalist id="list_create_subject">
-                </datalist>
-                    <label>Work Node Id
-                  <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode' placeholder="work node id" disabled/>
-              </label>
-                    <datalist id="list_create_work">
-                </datalist>
-                    <label>Relation
-                  <input type="text" list="list_create_subject_work_relation" class="inputName" id='ConnectNodeRelation' placeholder="node relation" />
-              </label>
-                    <datalist id="list_create_subject_work_relation">
-                </datalist>
+                <div id="ConnectNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle_Connect" aria-hidden="true" role="dialog">
+                    <h2 id="modalTitle_Connect">Connect Node</h2>
+                    <form id="CreateWorkNodeForm">
+                        <div class="row">
+                            <div class="large-12 columns">
+                                <div id="ConnectNodeSubjectElements">
+                                    <label>Subject Node Id
+                                <input type="text" list="list_create_subject" class="inputName" id='ConnectSubjectNode' placeholder="Prameya node id" disabled />
+                                <!-- <datalist id="list_create_subject">
+                            </datalist> -->
+                                </label>
+                                    <label>Work Node Id
+                            <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode1' placeholder="work node id" disabled/>
+                        </label>
+                                    <datalist id="list_create_work">
+                            </datalist>
+                                    <label>Relation
+                                <input type="text" list="list_create_subject_work_relation" class="inputName" id='ConnectNodeRelation1' value='pramaana_prameya' placeholder="node relation" />
+                        </label>
+                                    <datalist id="list_create_subject_work_relation">
+                            </datalist>
+                                </div>
+                                <div id="ConnectNodePersonElements">
+                                    <label>Person Node Id
+                            <input type="text" list="list_create_person" class="inputName" id='ConnectPersonNode' placeholder="Pramatha node id" disabled />
+                            <!-- <datalist id="list_create_person">
+                            </datalist> -->
+                            <label>Work Node Id
+                                <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode2' placeholder="work node id" disabled/>
+                            </label>
+                                    <datalist id="list_create_work">
+                            </datalist>
+                                    <label>Relation
+                            <input type="text" list="list_create_person_work_relation" class="inputName" id='ConnectNodeRelation2'  value='pramaana_pramatha'placeholder="node relation" />
+                            </label>
+                                    <datalist id="list_create_person_work_relation">
+                            </datalist>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-8 columns">
+                                &nbsp;
+                            </div>
+                            <div class="large-4 columns">
+                                <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
+                                <a href="#" class="button success" onclick="connect_nodes()">Connect</a>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="close-reveal-modal" aria-label="Close">&#215;</a>
                 </div>
-            </div>
-            <div class="row">
-                <div class="large-8 columns">
-                    &nbsp;
-                </div>
-                <div class="large-4 columns">
-                    <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
-                    <a href="#" class="button success" onclick="connect_subject_work_nodes()">Connect</a>
-                </div>
-            </div>
-        </form>
-        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-    </div>
 
-    <div id="tree-container"></div>
+                <div id="tree-container"></div>
 
-    <script>
-        function generateId() {
-            id = $('#CreateNodeId').val();
-            if (id.length > 0) return;
-            name = $('#CreateNodeName').val();
-            id = name.replace(/[ \-]/g, "");
-            idl = id.length;
-            if (idl > 20) {
-                idtrunc = id.slice(0, 15) + id.slice(idl - 5, idl - 1);
-                $('#CreateNodeId').val(idtrunc);
-            } else $('#CreateNodeId').val(id);
-        }
+                <script>
+                    function generateId() {
+                        id = $('#CreateNodeId1').val();
+                        if (currentValue == "Person") id = $('#CreateNodeId2').val();
+                        if (id.length > 0) return;
+                        name = $('#CreateNodeName').val();
+                        id = name.replace(/[ \-]/g, "");
+                        idl = id.length;
+                        if (idl > 20) {
+                            idtrunc = id.slice(0, 15) + id.slice(idl - 5, idl - 1);
+                            $('#CreateNodeId1').val(idtrunc);
+                        } else {
+                            $('#CreateNodeId1').val(id);
+                        }
+                    }
 
-        function promise_works_or_subjects() {
-            return new Promise(function(resolve, reject) {
-                var result = d3.json(url + works_or_subjects_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                    if (err) {
-                        console.log("error:", err);
-                        reject(new Error(err));
-                    } else {
-                        $('#modalTitle_Connect').html("Connect " + works_or_subjects_list_sanskrit + " Node");
-                        $(content[works_or_subjects_list]).each(function() {
-                            if (works_or_subjects_list == "works")
-                                $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
-                            else $('#list_create_subject').append("<option value=\"" + this.id + "\"></option>");
+                    function generateIni() {
+                        f = $('#CreateNodeFirst').val();
+                        if (typeof f == 'undefined') f = "x";
+                        m = $('#CreateNodeMiddle').val();
+                        if (typeof m == 'undefined') m = "x";
+                        l = $('#CreateNodeLast').val();
+                        if (typeof l == 'undefined') l = "x";
+                        // console.log(f + m + l);
+                        i = f.slice(0, 1) + m.slice(0, 1) + l.slice(0, 1);
+                        $('#CreateNodeInitials').val(i);
+                        $('#CreateNodeId2').val(i);
+                    }
+
+                    function generateIdIni() {
+                        id = $('#CreateNodeInitials').val();
+                        $('#CreateNodeId2').val(id)
+                    }
+
+                    function promise_Search() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + search_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    $('#modalTitle_Connect').html("Connect " + subjects_works_or_persons_list_sanskrit + " Node");
+                                    $('#SearchList').empty();
+                                    // console.log(content[search_list]);
+                                    $('#SearchList').empty();
+                                    $(content[search_list]).each(function() {
+                                        $('#SearchList').append("<option value=\"" + this.id + "\"></option>");
+                                    });
+                                    if (search_list == "subjects") $("#Search").attr("placeholder", "Search Prameya Tree");
+                                    else if (search_list == "works") $("#Search").attr("placeholder", "Search PramaaNa Tree");
+                                    else $("#Search").attr("placeholder", "Search Pramatha Tree");
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
                         });
-                        resolve(result);
                     }
-                });
-                resolve(result);
-            });
-        }
 
-        function promise_subject_work_relations() {
-            return new Promise(function(resolve, reject) {
-                var result = d3.json(url + "subject-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                    if (err) {
-                        console.log("error:", err);
-                        reject(new Error(err));
-                    } else {
-                        $(content.relations).each(function() {
-                            $('#list_create_subject_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                    function promise_subjects_works_or_persons() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + subjects_works_or_persons_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    $('#modalTitle_Connect').html("Connect " + subjects_works_or_persons_list_sanskrit + " Node");
+                                    $(content[subjects_works_or_persons_list]).each(function() {
+                                        if (subjects_works_or_persons_list == "works")
+                                            $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
+                                        else if (subjects_works_or_persons_list == "persons")
+                                            $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
+                                        else $('#list_create_subject').append("<option value=\"" + this.id + "\"></option>");
+                                    });
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
                         });
-                        resolve(result);
                     }
-                });
-                resolve(result);
-            });
-        }
 
-        function promise_relations() {
-            return new Promise(function(resolve, reject) {
-                var result = d3.json(url + relations_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                    if (err) {
-                        console.log("error:", err);
-                        reject(new Error(err));
-                    } else {
-                        $(content.relations).each(function() {
-                            $('#createRelationList').append("<option value=\"" + this.id + "\"></option>");
-                            $('#renameRelationList').append("<option value=\"" + this.id + "\"></option>");
+                    function promise_subject_work_relations() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + "subject-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    $(content.relations).each(function() {
+                                        $('#list_create_subject_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                                    });
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
                         });
-                        resolve(result);
                     }
-                });
-                resolve(result);
-            });
-        }
 
-        function promise_tree() {
-            return new Promise(function(resolve, reject) {
-                var result = d3.json(url + displayTree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                    if (err) {
-                        console.log("error:", err);
-                        reject(new Error(err));
-                    } else {
-                        svgElement = $("#tree-container").children().first();
-                        svgElement.remove();
-                        draw_tree(err, content);
-                        resolve(result);
+                    function promise_person_work_relations() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + "person-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    $(content.relations).each(function() {
+                                        $('#list_create_person_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                                    });
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
+                        });
                     }
-                });
-                resolve(result);
-            });
-        }
 
-        function handleClick(myRadio) {
-            currentValue = myRadio.value;
-            if (currentValue == "Subject") {
-                displayTree = "tree";
-                relations_list = "subject-subject-relations";
-                works_or_subjects_list = "works";
-                works_or_subjects_list_sanskrit = "PramaaNa";
-            } else {
-                displayTree = "tree-work";
-                relations_list = "work-work-relations";
-                works_or_subjects_list = "subjects";
-                works_or_subjects_list_sanskrit = "Prameya";
-            }
-            promise_relations()
-                .then(promise_works_or_subjects)
-                .then(promise_subject_work_relations)
-                .then(promise_tree).then(
-                    //     function(response) {
-                    //     console.log("all promises fulfilled. Success!", response);
-                    // }
-                );
-        }
-    </script>
-    <script>
-        // for the first initialization
-        $('document').ready(function() {
-            //  $("#restServiceUrl").load("restServiceUrl.txt");
-            $(document).foundation();
-            $(document).on('opened', '[data-reveal]', function() {
-                var element = $(".inputName:visible").first();
-                element.focus(function() {
-                    this.selectionStart = this.selectionEnd = this.value.length;
-                });
-                element.focus();
-            });
-            $('#RenameNodeForm').submit(function(e) {
-                rename_node();
-                return false;
-            });
-            $('#CreateNodeForm').submit(function(e) {
-                create_node();
-                return false;
-            });
-            // var treeJSON = d3.json("tree.json", draw_tree);
-            // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-            var url = "http://" + getIp() + ":5000/knowledgeTree/api/v1.0/";
-            var auth = getauth();
-        });
-    </script>
+                    function promise_relations() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + relations_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    $('#createRelationList').empty();
+                                    $('#renameRelationList').empty();
+                                    $(content.relations).each(function() {
+                                        $('#createRelationList').append("<option value=\"" + this.id + "\"></option>");
+                                        $('#renameRelationList').append("<option value=\"" + this.id + "\"></option>");
+                                    });
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
+                        });
+                    }
+
+                    function promise_tree() {
+                        return new Promise(function(resolve, reject) {
+                            var result = d3.json(url + displayTree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) {
+                                    console.log("error:", err);
+                                    reject(new Error(err));
+                                } else {
+                                    svgElement = $("#tree-container").children().first();
+                                    svgElement.remove();
+                                    draw_tree(err, content);
+                                    resolve(result);
+                                }
+                            });
+                            resolve(result);
+                        });
+                    }
+
+                    function handleClick(myRadio) {
+                        currentValue = myRadio.value;
+                        if (currentValue == "Subject") {
+                            displayTree = "tree";
+                            relations_list = "subject-subject-relations";
+                            search_list = "subjects";
+                            subjects_works_or_persons_list = "works";
+                            subjects_works_or_persons_list_sanskrit = "PramaaNa";
+                        } else if (currentValue == "Work") {
+                            displayTree = "tree-work";
+                            relations_list = "work-work-relations";
+                            search_list = "works";
+                            subjects_works_or_persons_list = "subjects";
+                            subjects_works_or_persons_list_sanskrit = "Prameya";
+                        } else {
+                            displayTree = "tree-person";
+                            relations_list = "person-person-relations";
+                            search_list = "persons";
+                            subjects_works_or_persons_list = "works";
+                            subjects_works_or_persons_list_sanskrit = "PramaaNa";
+                        }
+                        promise_relations()
+                            .then(promise_subjects_works_or_persons)
+                            .then(promise_Search)
+                            .then(promise_subject_work_relations)
+                            .then(promise_person_work_relations)
+                            .then(promise_tree)
+                            .then(
+                                //     function(response) {
+                                //     console.log("all promises fulfilled. Success!", response);
+                                // }
+                            );
+                    }
+                </script>
+                <script>
+                    // for the first initialization
+                    $('document').ready(function() {
+                        //  $("#restServiceUrl").load("restServiceUrl.txt");
+                        $(document).foundation();
+                        $(document).on('opened', '[data-reveal]', function() {
+                            var element = $(".inputName:visible").first();
+                            element.focus(function() {
+                                this.selectionStart = this.selectionEnd = this.value.length;
+                            });
+                            element.focus();
+                        });
+                        $('#RenameNodeForm').submit(function(e) {
+                            rename_node();
+                            return false;
+                        });
+                        $('#CreateNodeForm').submit(function(e) {
+                            create_node();
+                            return false;
+                        });
+                        // var treeJSON = d3.json("tree.json", draw_tree);
+                        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
+                        var url = "http://" + getIp() + ":5000/knowledgeTree/api/v1.0/";
+                        var auth = getauth();
+                        $('#Search').change(function() {
+                            idTxt = $('#Search').val();
+                            // idSelected = $("#SearchList option:selected").text();
+                            if (currentValue == "Subject") subtree = "subtree/";
+                            else if (currentValue == "Work") subtree = "subtree-work/";
+                            else subtree = "subtree-person/";
+                            d3.json(url + subtree + idTxt).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                                if (err) console.log("error:", err);
+                                else {
+                                    svgElement = $("#tree-container").children().first();
+                                    svgElement.remove();
+                                    draw_tree(err, content);
+                                }
+                            });
+                        })
+                    });
+                </script>
 </body>
+
+</html>
 
 </html>

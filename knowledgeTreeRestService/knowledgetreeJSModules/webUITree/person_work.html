@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="d3-context-menu.css" />
     <script src="d3.v3.min.js"></script>
-    <script src="dndTreeSubjectWork.js"></script>
+    <script src="dndTreePersonWork.js"></script>
     <script src="d3-context-menu.js"></script>
     <script src="underscore-min.js"></script>
     <script src="jquery.js"></script>
@@ -24,9 +24,9 @@
         <form id="CreateWorkNodeForm">
             <div class="row">
                 <div class="large-12 columns">
-                    <label>Subject Node Id
-                  <input type="text" list="list_create_subject" class="inputName" id='ConnectSubjectNode' placeholder="Prameya node id" disabled />
-                    <datalist id="list_create_subject">
+                    <label>Person Node Id
+                  <input type="text" list="list_create_person" class="inputName" id='ConnectPersonNode' placeholder="Prametha node id" disabled />
+                    <datalist id="list_create_person">
                 </datalist>
                     <label>Work Node Id
                   <input type="text" list="list_create_work" class="inputName" id='ConnectWorkNode' placeholder="PramaaNa node id" disabled/>
@@ -34,9 +34,9 @@
                     <datalist id="list_create_work">
                 </datalist>
                     <label>Relation
-                  <input type="text" list="list_create_subject_work_relation" class="inputName" id='ConnectNodeRelation' placeholder="node relation" value="pramaana_prameya"/>
+                  <input type="text" list="list_create_person_work_relation" class="inputName" id='ConnectNodeRelation' placeholder="node relation" value="pramaana_pramatha"/>
               </label>
-                    <datalist id="list_create_subject_work_relation">
+                    <datalist id="list_create_person_work_relation">
                 </datalist>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="large-4 columns">
                     <!--<a href="#" class="button info" onclick="close_create_node_modal()">Cancel</a>-->
-                    <a href="#" class="button success" onclick="connect_subject_work_nodes()">Connect</a>
+                    <a href="#" class="button success" onclick="connect_person_work_nodes()">Connect</a>
                 </div>
             </div>
         </form>
@@ -58,30 +58,30 @@
         var url;
         var auth;
         // var relations_list;
-        var works_or_subjects_list;
-        var works_or_subjects_list_sanskrit;
-        if (!getParameterByName('subject')) {
-            works_or_subjects_list = "subjects";
-            works_or_subjects_list_sanskrit = "Prameya"
-                // relations_list = "subject-subject-relations";
+        var works_or_persons_list;
+        var works_or_persons_list_sanskrit;
+        if (!getParameterByName('person')) {
+            works_or_persons_list = "persons";
+            works_or_persons_list_sanskrit = "Pramatha"
+                // relations_list = "person-person-relations";
         } else {
-            works_or_subjects_list = "works";
-            works_or_subjects_list_sanskrit = "PramaNa"
+            works_or_persons_list = "works";
+            works_or_persons_list_sanskrit = "PramaaNa"
                 // relations_list = "work-work-relations";
         };
 
-        function promise_works_or_subjects() {
+        function promise_works_or_persons() {
             return new Promise(function(resolve, reject) {
-                var result = d3.json(url + works_or_subjects_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                var result = d3.json(url + works_or_persons_list).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
                     if (err) {
                         console.log("error:", err);
                         reject(new Error(err));
                     } else {
-                        $('#modalTitle_Connect').html("Connect " + works_or_subjects_list_sanskrit + " Node");
-                        $(content[works_or_subjects_list]).each(function() {
-                            if (works_or_subjects_list == "works")
+                        $('#modalTitle_Connect').html("Connect " + works_or_persons_list_sanskrit + " Node");
+                        $(content[works_or_persons_list]).each(function() {
+                            if (works_or_persons_list == "works")
                                 $('#list_create_work').append("<option value=\"" + this.id + "\"></option>");
-                            else $('#list_create_subject').append("<option value=\"" + this.id + "\"></option>");
+                            else $('#list_create_person').append("<option value=\"" + this.id + "\"></option>");
                         });
                         resolve(result);
                     }
@@ -90,15 +90,15 @@
             });
         }
 
-        function promise_subject_work_relations() {
+        function promise_person_work_relations() {
             return new Promise(function(resolve, reject) {
-                var result = d3.json(url + "subject-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                var result = d3.json(url + "person-work-relations").header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
                     if (err) {
                         console.log("error:", err);
                         reject(new Error(err));
                     } else {
                         $(content.relations).each(function() {
-                            $('#list_create_subject_work_relation').append("<option value=\"" + this.id + "\"></option>");
+                            $('#list_create_person_work_relation').append("<option value=\"" + this.id + "\"></option>");
                         });
                         resolve(result);
                     }
@@ -132,11 +132,11 @@
             });
             url = getParameterByName('url');
             auth = getParameterByName('auth');
-            if (!getParameterByName('work')) tree = "tree-subject-work/" + getParameterByName('subject');
-            else tree = "tree-work-subject/" + getParameterByName('work');
+            if (!getParameterByName('work')) tree = "tree-person-work/" + getParameterByName('person');
+            else tree = "tree-work-person/" + getParameterByName('work');
             // console.log(url, auth);
             // console.log(tree);
-            promise_works_or_subjects().then(promise_subject_work_relations).then();
+            promise_works_or_persons().then(promise_person_work_relations).then();
             d3.json(url + tree).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
                 if (err)
                     console.log("error:", err);

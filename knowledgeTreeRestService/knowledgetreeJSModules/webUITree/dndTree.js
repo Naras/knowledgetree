@@ -16,7 +16,8 @@ var node_to_move = null;
 var allNodes = [];
 
 var with_relation = "subject-with-relation";
-var work_or_subject = "subject";
+var subject_work_or_person = "subject";
+var currentValue = "subject";
 
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -40,10 +41,15 @@ function getauth() {
     return auth;
 }
 
+function connect_nodes() {
+    if (currentValue == "Subject" || currentValue == "Work") connect_subject_work_nodes();
+    else connect_person_work_nodes();
+}
+
 function connect_subject_work_nodes() {
     subject = $('#ConnectSubjectNode').val();
-    work = $('#ConnectWorkNode').val();
-    node_relation = $('#ConnectNodeRelation').val();
+    work = $('#ConnectWorkNode1').val();
+    node_relation = $('#ConnectNodeRelation1').val();
     console.log('Connected Subject:' + subject + " to Work:" + work + " with relation:" + node_relation);
 
     d3.xhr(url + "subject-to-work")
@@ -68,10 +74,47 @@ function connect_subject_work_nodes() {
     close_modal();
 }
 
+function connect_person_work_nodes() {
+    person = $('#ConnectPersonNode').val();
+    work = $('#ConnectWorkNode2').val();
+    node_relation = $('#ConnectNodeRelation2').val();
+    console.log('Connected Person:' + person + " to Work:" + work + " with relation:" + node_relation);
+
+    d3.xhr(url + "person-to-work")
+        .header("Content-Type", "application/json")
+        .header("Authorization", "Basic " + btoa(auth))
+        .post(
+            JSON.stringify({
+                "person": person,
+                "work": work,
+                "relation": node_relation
+            }),
+            function(err, rawdata) {
+                if (err) console.log("error:", err)
+                else {
+                    try {
+                        // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
+                        console.log("response:", rawdata.response, "status:", rawdata.status);
+                    } catch (error) { console.log("error:", err, "response:", rawdata) };
+                }
+            }
+        );
+    close_modal();
+}
+
 function showNodeConnectTree(d) {
-    if (works_or_subjects_list == "works") keyword = "&subject=";
-    else keyword = "&work=";
-    var displayDoc = window.open("subject_work.html?auth=" + auth + keyword + d.id + "&url=" + url, "Node Connection Details");
+    // if (subjects_works_or_persons_list == "works")
+    if (currentValue == "Subject") {
+        keyword = "&subject=";
+        page = "subject_work.html";
+    } else if (currentValue == "Work") {
+        keyword = "&work=";
+        page = "subject_work.html";
+    } else {
+        keyword = "&person=";
+        page = "person_work.html";
+    }
+    var displayDoc = window.open(page + "?auth=" + auth + keyword + d.id + "&url=" + url, "Node Connection Details");
 }
 
 function create_node() {
@@ -83,31 +126,54 @@ function create_node() {
         if (create_node_parent.children == null) {
             create_node_parent.children = [];
         }
-        id = $('#CreateNodeId').val();
-        sortorder = $('#CreateNodeOrder').val();
-        name = $('#CreateNodeName').val();
         relation = $('#CreateNodeRelation').val();
-        description = $('#CreateNodeDescription').val().replace(/(\r\n|\n|\r)/gm, "\r\n")
-        new_node = {
-            'name': name,
-            'id': id,
-            'sortorder': sortorder,
-            'description': description,
-            'relation': relation,
-            'depth': create_node_parent.depth + 1,
-            'children': [],
-            '_children': null
-        };
-        create_node_parent.children.push(new_node);
-        create_node_modal_active = false;
-        $('#CreateNodeId').val('');
-        $('#CreateNodeName').val('');
-        $('#CreateNodeDescription').val('');
-        $('#CreateNodeOrder').val('');
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
+        if (currentValue == "Work" || currentValue == "Subject") {
+            id = $('#CreateNodeId1').val();
+            sortorder = $('#CreateNodeOrder').val();
+            name = $('#CreateNodeName').val();
+            description = $('#CreateNodeDescription').val().replace(/(\r\n|\n|\r)/gm, "\r\n")
+            new_node = {
+                'name': name,
+                'id': id,
+                'sortorder': sortorder,
+                'description': description,
+                'relation': relation,
+                'depth': create_node_parent.depth + 1,
+                'children': [],
+                '_children': null
+            };
+            create_node_parent.children.push(new_node);
+            create_node_modal_active = false;
+            $('#CreateNodeId').val('');
+            $('#CreateNodeName').val('');
+            $('#CreateNodeDescription').val('');
+            $('#CreateNodeOrder').val('');
+        } else { // persons
+            id = $('#CreateNodeId2').val();
+            first = $('#CreateNodeFirst').val();
+            middle = $('#CreateNodeMiddle').val();
+            last = $('#CreateNodeLast').val();
+            initials = $('#CreateNodeInitials').val();
+            nick = $('#CreateNodeNick').val();
+            other = $('#CreateNodeOther').val();
+            new_node = {
+                'id': id,
+                'first': first,
+                'middle': middle,
+                'last': last,
+                'initials': initials,
+                'nick': nick,
+                'other': other,
+                'relation': relation,
+                'depth': create_node_parent.depth + 1,
+                'children': [],
+                '_children': null
+            };
+        }
         var auth = getauth();
         console.log('Created Node: ' + id);
-        if (works_or_subjects_list == "works") {
+        // if (persons_works_or_persons_list == "works") {
+        if (currentValue == "Subject") {
             with_relations = "subject-with-relation";
             d3.xhr(url + with_relations)
                 .header("Content-Type", "application/json")
@@ -129,7 +195,7 @@ function create_node() {
                         }
                     }
                 );
-        } else {
+        } else if (currentValue == "Work") {
             with_relations = "work-with-relation";
             d3.xhr(url + with_relations)
                 .header("Content-Type", "application/json")
@@ -151,8 +217,37 @@ function create_node() {
                         }
                     }
                 );
+        } else { // persons
+            with_relations = "person-with-relation";
+            d3.xhr(url + with_relations)
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Basic " + btoa(auth))
+                .post(
+                    JSON.stringify({
+                        "person": {
+                            "id": new_node.id,
+                            "first": new_node.first,
+                            "middle": new_node.middle,
+                            "last": new_node.last,
+                            "initials": new_node.initials,
+                            "nick": new_node.nick,
+                            "other": new_node.other
+                        },
+                        "related": create_node_parent.id,
+                        "relation": new_node.relation
+                    }),
+                    function(err, rawdata) {
+                        if (err) console.log("error:", err)
+                        else {
+                            try {
+                                // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
+                                console.log("response:", rawdata.response, "status:", rawdata.status);
+                            } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        }
+                    }
+                );
         }
-        // console.log(work_or_subject);
+        // console.log(subject_work_or_person);
         close_modal();
         outer_update(create_node_parent);
     }
@@ -160,40 +255,74 @@ function create_node() {
 
 function rename_node() {
     if (node_to_rename && rename_node_modal_active) {
-        $('#RenameNodeId').disabled = true;
-        node_to_rename.id = $('#RenameNodeId').val();
-        node_to_rename.name = $('#RenameNodeName').val();
         node_to_rename.relation = $('#RenameNodeRelation').val();
-        node_to_rename.sortorder = $('#RenameNodeOrder').val();
-        node_to_rename.description = $('#RenameNodeDescription').val();
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-        var auth = getauth();
-        if (works_or_subjects_list == "works") {
-            with_relations = "subject-with-relation";
-            work_or_subject = "subject/";
+        if (currentValue == "Work" || currentValue == "Subject") {
+            node_to_rename.id = $('#RenameNodeId1').val();
+            node_to_rename.name = $('#RenameNodeName').val();
+            node_to_rename.sortorder = $('#RenameNodeOrder').val();
+            node_to_rename.description = $('#RenameNodeDescription').val();
         } else {
-            with_relations = "work-with-relation";
-            work_or_subject = "work/";
+            $('#RenameNodeId2').disabled = true;
+            node_to_rename.id = $('#RenameNodeId2').val();
+            node_to_rename.first = $('#RenameNodeFirst').val();
+            node_to_rename.middle = $('#RenameNodeMiddle').val();
+            node_to_rename.last = $('#RenameNodeLast').val();
+            node_to_rename.initials = $('#RenameNodeInitials').val();
+            node_to_rename.nick = $('#RenameNodeNick').val();
+            node_to_rename.other = $('#RenameNodeOther').val();
         }
-        d3.xhr(url + work_or_subject + node_to_rename.id)
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Basic " + btoa(auth))
-            .send("PUT",
-                JSON.stringify({
-                    "name": node_to_rename.name,
-                    "description": node_to_rename.description,
-                    "relation": node_to_rename.relation,
-                    "sortorder": node_to_rename.sortorder
-                }),
-                function(err, rawdata) {
-                    if (err) console.log("error:", err)
-                    else {
-                        try {
-                            console.log("response:", rawdata.response, "status:", rawdata.status);
-                        } catch (error) { console.log("error:", err, "response:", rawdata) };
+        var auth = getauth();
+        if (currentValue == "Subject") {
+            with_relations = "subject-with-relation";
+            subject_work_or_person = "subject/";
+        } else if (currentValue == "Work") {
+            with_relations = "work-with-relation";
+            subject_work_or_person = "work/";
+            d3.xhr(url + subject_work_or_person + node_to_rename.id)
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Basic " + btoa(auth))
+                .send("PUT",
+                    JSON.stringify({
+                        "name": node_to_rename.name,
+                        "description": node_to_rename.description,
+                        "relation": node_to_rename.relation,
+                        "sortorder": node_to_rename.sortorder
+                    }),
+                    function(err, rawdata) {
+                        if (err) console.log("error:", err)
+                        else {
+                            try {
+                                console.log("response:", rawdata.response, "status:", rawdata.status);
+                            } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        }
                     }
-                }
-            );
+                );
+        } else { // Person
+            with_relations = "person-with-relation";
+            subject_work_or_person = "person/";
+            d3.xhr(url + subject_work_or_person + node_to_rename.id)
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Basic " + btoa(auth))
+                .send("PUT",
+                    JSON.stringify({
+                        "first": node_to_rename.first,
+                        "middle": node_to_rename.middle,
+                        "last": node_to_rename.last,
+                        "initials": node_to_rename.initials,
+                        "nick": node_to_rename.nick,
+                        "other": node_to_rename.other,
+                        "relation": node_to_rename.relation
+                    }),
+                    function(err, rawdata) {
+                        if (err) console.log("error:", err)
+                        else {
+                            try {
+                                console.log("response:", rawdata.response, "status:", rawdata.status);
+                            } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        }
+                    }
+                );
+        }
         console.log('Updated Node: ' + node_to_rename.id);
         rename_node_modal_active = false;
     }
@@ -211,7 +340,7 @@ function move_node() {
         $('#MoveParentNodeId').val('');
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
-        if (works_or_subjects_list == "works") move_what = "subject-move/";
+        if (subjects_works_or_persons_list == "works") move_what = "subject-move/";
         else move_what = "work-move/"
         d3.xhr(url + move_what + node_to_move.id)
             .header("Content-Type", "application/json")
@@ -271,9 +400,33 @@ function draw_tree(error, treeData) {
             title: 'View node',
             action: function(elm, d, i) {
                 $("#ViewNodeId").val(d.id);
-                $("#ViewNodeName").val(d.name);
-                $("#ViewNodeOrder").val(d.sortorder);
-                $("#ViewNodeDescription").val(d.description);
+                $("#ViewNodeId").prop('disabled', true);
+                if (currentValue == "Subject" || currentValue == "Work") {
+                    $('#ViewSubjectsElements').show()
+                    $('#ViewPersonsElements').hide()
+                    $("#ViewNodeName").val(d.name);
+                    $("#ViewNodeOrder").val(d.sortorder);
+                    $("#ViewNodeDescription").val(d.description);
+                    $("#ViewNodeName").prop('disabled', true);
+                    $("#ViewNodeOrder").prop('disabled', true);
+                    $("#ViewNodeDescription").prop('disabled', true);
+                } else {
+                    // console.log("persons - form modfications")
+                    $('#ViewSubjectsElements').hide()
+                    $('#ViewPersonsElements').show()
+                    $("#ViewNodeFirst").val(d.first);
+                    $("#ViewNodeMiddle").val(d.middle);
+                    $("#ViewNodeLast").val(d.last);
+                    $("#ViewNodeInitials").val(d.initials);
+                    $("#ViewNodeNick").val(d.nick);
+                    $("#ViewNodeOther").val(d.other);
+                    $("#ViewNodeFirst").prop('disabled', true);
+                    $("#ViewNodeMiddle").prop('disabled', true);
+                    $("#ViewNodeLast").prop('disabled', true);
+                    $("#ViewNodeInitials").prop('disabled', true);
+                    $("#ViewNodeNick").prop('disabled', true);
+                    $("#ViewNodeOther").prop('disabled', true);
+                }
                 $("#ViewNodeRelation").val(d.relation);
                 view_node_modal_active = true;
                 node_to_view = d;
@@ -287,21 +440,57 @@ function draw_tree(error, treeData) {
                 create_node_parent = d;
                 create_node_modal_active = true;
                 $('#CreateNodeModal').foundation('reveal', 'open');
-                $('#CreateNodeName').focus();
+                if (currentValue == "Subject" || currentValue == "Work") {
+                    $('#CreateSubjectsElements').show();
+                    $('#CreatePersonsElements').hide();
+                    $('#CreateNodeId1').val('');
+                    $('#CreateNodeName').val('');
+                    $('#CreateNodeDescription').val('');
+                    $('#CreateNodeOrder').val('');
+                } else {
+                    // console.log("persons - form modfications")
+                    $('#CreateSubjectsElements').hide();
+                    $('#CreatePersonsElements').show();
+                    $('#CreateNodeFirst').val('');
+                    $('#CreateNodeMiddle').val('');
+                    $('#CreateNodeLast').val('');
+                    $('#CreateNodeInitials').val('');
+                    $('#CreateNodeNick').val('');
+                    $('#CreateNodeOther').val('');
+                    $('#CreateNodeId2').val('');
+                }
+                promise_relations().then(); // refresh relations list
             }
         },
         {
             title: 'Edit node',
             action: function(elm, d, i) {
-                $("#RenameNodeId").val(d.id);
-                $("#RenameNodeName").val(d.name);
-                $("#RenameNodeDescription").val(d.description);
+                if (currentValue == "Subject" || currentValue == "Work") {
+                    $('#RenameSubjectsElements').show()
+                    $('#RenamePersonsElements').hide()
+                    $("#RenameNodeId1").val(d.id);
+                    $("#RenameNodeName").val(d.name);
+                    $("#RenameNodeOrder").val(d.sortorder);
+                    $("#RenameNodeDescription").val(d.description);
+                    $("#RenameNodeId1").prop('disabled', true);
+                } else {
+                    // console.log("persons - form modfications")
+                    $('#RenameSubjectsElements').hide()
+                    $('#RenamePersonsElements').show()
+                    $("#RenameNodeId2").val(d.id);
+                    $("#RenameNodeFirst").val(d.first);
+                    $("#RenameNodeMiddle").val(d.middle);
+                    $("#RenameNodeLast").val(d.last);
+                    $("#RenameNodeInitials").val(d.initials);
+                    $("#RenameNodeNick").val(d.nick);
+                    $("#RenameNodeOther").val(d.other);
+                    $("#RenameNodeName").focus();
+                    $('#RenameNodeModal').foundation('reveal', 'open');
+                    $("#RenameNodeId2").prop('disabled', true);
+                }
                 $("#RenameNodeRelation").val(d.relation);
-                $("#RenameNodeOrder").val(d.sortorder);
                 rename_node_modal_active = true;
                 node_to_rename = d;
-                $("#RenameNodeName").focus();
-                $('#RenameNodeModal').foundation('reveal', 'open');
             }
         },
         {
@@ -317,31 +506,44 @@ function draw_tree(error, treeData) {
         //     }
         // },
         {
-            title: "Connect " + works_or_subjects_list_sanskrit + " Node",
+            title: "Connect " + subjects_works_or_persons_list_sanskrit + " Node",
             action: function(elm, d, i) {
-                if (works_or_subjects_list == "works") {
+                if (currentValue == "Subject") {
                     // alert("case subjects");
-                    $("#ConnectWorkNode").val('');
+                    $('#ConnectNodeSubjectElements').show();
+                    $('#ConnectNodePersonElements').hide();
+                    $("#ConnectWorkNode1").val('');
                     $("#ConnectSubjectNode").val(d.id);
                     $("#ConnectWorkNode").prop('disabled', false);
                     $("#ConnectSubjectNode").prop('disabled', true);
-                    $('#CreateSubjectNode').focus();
-                } else {
+                    $('#ConnectSubjectNode').focus();
+                } else if (currentValue == "Work") {
                     // alert("case works");
-                    $("#ConnectWorkNode").val(d.id);
+                    $('#ConnectNodeSubjectElements').show();
+                    $('#ConnectNodePersonElements').hide();
+                    $("#ConnectWorkNode1").val(d.id);
                     $("#ConnectSubjectNode").val('');
                     $("#ConnectWorkNode").prop('disabled', true);
                     $("#ConnectSubjectNode").prop('disabled', false);
-                    $('#CreateWorkNode').focus();
+                    $('#ConnectWorkNode').focus();
+                } else {
+                    // alert("case persons");
+                    $('#ConnectNodeSubjectElements').hide();
+                    $('#ConnectNodePersonElements').show();
+                    $("#ConnectPersonNode").val(d.id);
+                    $("#ConnectWorkNode2").val('');
+                    $("#ConnectPersonNode").prop('disabled', true);
+                    $("#ConnectWorkNode2").prop('disabled', false);
+                    $('#ConnectPersonNode').focus();
                 }
-                $("#ConnectNodeRelation").val("pramaana_prameya");
+                $("#ConnectNodeRelation").val("pramaana_pramatha");
                 $('#ConnectNodeModal').foundation('reveal', 'open');
                 connect_node_modal_active = true;
                 // node_to_connect = d;
             }
         },
         {
-            title: 'View ' + works_or_subjects_list_sanskrit + ' Connections',
+            title: 'View ' + subjects_works_or_persons_list_sanskrit + ' Connections',
             action: function(elm, d, i) {
                 showNodeConnectTree(d);
             }
@@ -361,21 +563,25 @@ function draw_tree(error, treeData) {
                 $('#MoveParentNodeId').focus();
                 $('#MoveNodeModal').foundation('reveal', 'open');
             }
-        }
-        /*,
-                {
-                    title: 'View Subtree',
-                    action: function(elm, d, i) {
-                        var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-                        var auth = getauth();
-                        d3.json(url + "subtree/" + d.id).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
-                            if (err) console.log("error:", err);
-                            else {
-                                draw_tree(err, content);
-                            }
-                        });
+        },
+        {
+            title: 'View Subtree',
+            action: function(elm, d, i) {
+                // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
+                var auth = getauth();
+                if (currentValue == "Subject") subtree = "subtree/";
+                else if (currentValue == "Work") subtree = "subtree-work/";
+                else subtree = "subtree-person/";
+                d3.json(url + subtree + d.id).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+                    if (err) console.log("error:", err);
+                    else {
+                        svgElement = $("#tree-container").children().first();
+                        svgElement.remove();
+                        draw_tree(err, content);
                     }
-                }*/
+                });
+            }
+        }
     ]
 
     function getAllnodes(d, stopAt) {
@@ -436,8 +642,9 @@ function draw_tree(error, treeData) {
     function delete_node(node) {
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
-        if (works_or_subjects_list == "works") with_relations = "subject-with-relation/";
-        else with_relations = "work-with-relation/";
+        if (currentValue == "Subject") with_relations = "subject-with-relation/";
+        else if (currentValue == "Work") with_relations = "work-with-relation/";
+        else with_relations = "person-with-relation/";
         d3.xhr(url + with_relations + node.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
@@ -473,7 +680,7 @@ function draw_tree(error, treeData) {
 
     function sortTree() {
         tree.sort(function(a, b) {
-            // return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
+            if (currentValue == "Person") return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
             // console.log(typeof(b.sortorder), b.sortorder);
             var b_order = b.sortorder;
             if (typeof(b_order) == "string") {
@@ -533,8 +740,9 @@ function draw_tree(error, treeData) {
         strconfirm = confirm("Are you sure you want to move " + node_to_move + " to " + theparent);
         if (strconfirm == false) return false;
         var auth = getauth();
-        if (works_or_subjects_list == "works") move_what = "subject-move/";
-        else move_what = "work-move/"
+        if (currentValue == "subjects") move_what = "subject-move/";
+        else if (currentValue == "subjects") move_what = "work-move/";
+        else move_what = "person-move/";
         d3.xhr(url + move_what + node_to_move)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
@@ -835,8 +1043,20 @@ function draw_tree(error, treeData) {
 
     function showNodeAsWebPage(d) {
         var displayDoc = window.open("", "Node Details"); //, "width=800,height=500"); //"displayNode.html");
-        displayDoc.document.write("<head><title>" + d.name + "</title></head><body>" +
-            "<h2>Name:" + d.name + "</h2><br/>" + "<p>Description:" + d.description + "</p><body>");
+        if (currentValue == "Subject" || currentValue == "Work")
+            displayDoc.document.write("<head><title>" + d.name + "</title></head><body>" +
+                "<h2>Name:" + d.name + "</h2><br/>" + "<p>Description:" + d.description + "</p><body>");
+        else {
+            if (typeof(d.first) == "undefined") f = "";
+            else f = d.first;
+            if (typeof(d.middle) == "undefined") m = "";
+            else m = d.middle;
+            if (typeof(d.last) == "undefined") l = "";
+            else l = d.last;
+            displayDoc.document.write("<head><title>" + f + ' ' + m + ' ' + l + "</title></head><body>" +
+                "<h2>Name:" + f + ' ' + m + ' ' + l + "</h2><br/>" + "<p>Description:" + "description not yet avaliable" +
+                "</p><body>");
+        }
     }
 
     function update(source) {
@@ -901,8 +1121,16 @@ function draw_tree(error, treeData) {
                 return d.children || d._children ? "end" : "start";
             })
             .text(function(d) {
-                // return d.id;
-                return d.name;
+                // console.log(currentValue, d.id);
+                if (currentValue == "Person") {
+                    if (typeof(d.first) == "undefined") f = "";
+                    else f = d.first;
+                    if (typeof(d.middle) == "undefined") m = "";
+                    else m = d.middle;
+                    if (typeof(d.last) == "undefined") l = "";
+                    else l = d.last;
+                    return f + ' ' + m + ' ' + l;
+                } else return d.name;
             })
             .style("fill-opacity", 0)
             .on('click', showNodeAsWebPage);
@@ -930,7 +1158,15 @@ function draw_tree(error, treeData) {
                 return d.children || d._children ? "end" : "start";
             })
             .text(function(d) {
-                // return d.id;
+                if (currentValue == "Person") {
+                    if (typeof(d.first) == "undefined") f = "";
+                    else f = d.first;
+                    if (typeof(d.middle) == "undefined") m = "";
+                    else m = d.middle;
+                    if (typeof(d.last) == "undefined") l = "";
+                    else l = d.last;
+                    return f + ' ' + m + ' ' + l;
+                }
                 return d.name;
             });
 

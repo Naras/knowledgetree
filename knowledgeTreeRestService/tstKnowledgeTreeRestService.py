@@ -291,5 +291,176 @@ class TestUM(unittest.TestCase):
             response = restDelete('work/' + work)
             self.assertEqual(response.status_code,200)
 
+    def test_persons(self):
+        get_services = ['persons','person-to-person','person-person-relations']
+        for service in get_services:
+            response = restGet(service)
+            # print response.text
+            self.assertEqual(response.status_code,200)
+    def test_create_persons(self):
+        # ----------------create a sample person--------------------------
+        response =  restPost('person',{"id": "idtest", "first": "first", "last": "last","middle": "middle",   \
+                                  "initials": "ini", "nick":"nick", "other":"other"})
+        self.assertEqual(response.status_code,201)
+        self.assertIn('idtest',response.text)
+        # ----------------create a duplicate of the person--------------------------
+        '''
+        response = restPost('person',{"id": "idtest", "first": "firstduplicate", "last": "lastduplicate","middle": "middle",   \
+                                  "initials": "ini", "nick":"nick", "other":"other"})
+        self.assertEqual(response.status_code,201)
+        # print "attempt to create duplicate:", response.text
+        self.assertIn('idtest',response.text,'duplicate created')
+        '''
+        # ----------------create a parent person--------------------------
+        response =  restPost('person',{"id": "idtestParent", "first": "first-parent", "last": "last-parent","middle": "middle-parent",   \
+                                  "initials": "ini", "nick":"nick-parent", "other":"other-parent"})
+        # print 'status:', response.status_code, '\n',response.text
+        # create a child person
+        response = restPost('person-with-relation',{"person": {"id": "idtestChild","first": "first-child", "last": "last-child","middle": "middle-child",   \
+                                  "initials": "ini", "nick":"nick-child", "other":"other-child"},
+                         "related": "idtestParent", "relation": "gurushishya"})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual ('{"person":true}',response.text.replace('\n','').replace(' ',''))
+        # print 'status:', response.status_code, '\n',response.text.replace('\n','')
+        # # pprint.pprint(response.json())
+
+        # create a duplicate child person
+        '''
+        response = restPost('person-with-relation', \
+                        {"person": {"id": "idtestChild", "name": "name-test-child-duplicate", "description": "description-test-child-duplicate"},
+                         "related": "idtestParent", "relation": "commentary","sortorder": 65 })
+        self.assertEqual(response.status_code,200)
+        self.assertEqual ('{"subject":true}',response.text.replace('\n','').replace(' ',''))
+        '''
+        # ----------------get the parent person------------------
+        response=restGet('person/idtestParent')
+        self.assertEqual(response.status_code,200)
+        response_text = response.text.replace('\n','').replace(' ','')
+        # self.assertEqual( '{"person":{"first":"first-parent","id":"idtestParent","initials":"ini","last":"last-parent","middle":"middle-parent","nick":"nick-parent","other":"other-parent"}', \
+        #     response.text.replace('\n','').replace(' ',''))
+        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
+        self.assertIn('"first":"first-parent"',response_text)
+        self.assertIn('"last":"last-parent"',response_text)
+        self.assertIn('"middle":"middle-parent"',response_text)
+        self.assertIn('"nick":"nick-parent"',response_text)
+        self.assertIn('"initials":"ini"',response_text)
+        self.assertIn('"other":"other-parent"',response_text)
+        # print 'status:', response.status_code, '\n',response.text.replace('\n','').replace(' ','')
+
+        # -----------------get the child person-----------------
+        response=restGet('person/idtestChild')
+        self.assertEqual(response.status_code,200)
+        # self.assertEqual( "{'person':{'last':'last-child','middle':'middle-child','nick':'nick-child','other':'other-child','first':'first-child','id':'idtestChild','initials':'ini'}", \
+        #     response.text.replace('\n','').replace(' ','').replace(' ',''))
+        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
+        self.assertIn('"first":"first-child"',response_text)
+        self.assertIn('"last":"last-child"',response_text)
+        self.assertIn('"middle":"middle-child"',response_text)
+        self.assertIn('"nick":"nick-child"',response_text)
+        self.assertIn('"initials":"ini"',response_text)
+        self.assertIn('"other":"other-child"',response_text)
+        response=restGet('person-to-person')
+        # print response.text.replace('\n','').replace(' ','')
+
+        # ------------------check the parent-child relation------------------
+        self.assertIn('{"person1":"idtestParent","person2":"idtestChild","relation":"gurushishya"}', \
+            response.text.replace('\n','').replace(' ',''))
+    def test_modify_persons(self):
+        # -----------------modify the parent----------------------
+        response =  restPut('person/idtestParent',{'id': 'idtestParent','first': 'first-parent-update','last': 'last-parent-update'})
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,201)
+        # print 'status:', response.status_code, '\n', response.text.replace('\n','').replace(' ','')
+        # self.assertEqual( "{'last': 'last-parent-update', 'middle': 'middle', 'nick': 'nick', 'other': 'other', 'first': 'first-parent-update', \
+        #                   'id': 'idtest', 'initials': 'ini'}", \
+        #     response.text.replace('\n','').replace(' ',''))
+        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
+        self.assertIn('"first":"first-parent-update"',response_text)
+        self.assertIn('"last":"last-parent-update"',response_text)
+        self.assertIn('"middle":null',response_text)
+        self.assertIn('"nick":null',response_text)
+        self.assertIn('"initials":null',response_text)
+        self.assertIn('"other":null',response_text)
+
+        # -------------------get the parent--------------------------
+        response = restGet('person/idtestParent')
+        self.assertEqual(response.status_code,200)
+
+        # ------------------modify the child & the relation order-------------------------------
+        response =  restPut('person/idtestChild',{'id': 'idtestChild','first': 'first-child-update','last': 'last-child-update', \
+                                                   'relation': 'classmate'})
+        self.assertEqual(response.status_code,201)
+        # response = restGet('subject/idtestChild')
+        # print 'status:', response.status_code, '\n', response.text.replace('\n','').replace(' ','')
+        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
+        self.assertIn('"first":"first-child-update"',response_text)
+        self.assertIn('"last":"last-child-update"',response_text)
+        self.assertIn('"middle":null',response_text)
+        self.assertIn('"nick":null',response_text)
+        self.assertIn('"initials":null',response_text)
+        self.assertIn('"other":null',response_text)
+    def test_remove_persons(self):
+        # ------------------remove the child & its relation-------------
+        response = restDelete('person-with-relation/idtestChild')
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,200)
+        # ----------------------remove the parent-------------------
+        response = restDelete('person/idtestParent')
+        # print 'status:', response.status_code, '\n',response.text
+        self.assertEqual(response.status_code,200)
+        # ----------------------remove the sample person-------------------
+        response = restDelete('person/idtest')
+        self.assertEqual(response.status_code,200)
+
+    def test_person_to_work(self):
+        get_services = ['person-work-relations','person-to-work']
+        for service in get_services:
+            response = restGet(service)
+            # print response.text
+            self.assertEqual(response.status_code,200)
+         # ----------------create sample persons --------------------------
+        for person in {'idtest_person1','idtest_person2','idtest_person3','idtest_person4'}:
+            response =  restPost('person',{"id": person, "first": "first", "last": "last","middle": "middle",   \
+                                  "initials": "ini", "nick":"nick", "other":"other"})
+            self.assertEqual(response.status_code,201)
+            self.assertIn(person,response.text)
+        # ----------------create sample works --------------------------
+        for work in {'idtest_work1','idtest_work2','idtest_work3','idtest_work4'}:
+            response =  restPost('work',{'id': work,'name': 'name-test','description': 'description-test'})
+            self.assertEqual(response.status_code,201)
+            self.assertIn(work,response.text)
+        # ----------------create person work relations --------------------------
+        for work in {'idtest_work1','idtest_work2','idtest_work3'}:
+            response =  restPost('person-to-work',{'person': 'idtest_person1','work': work,'relation': 'pramaana_pramatha'})
+            self.assertEqual(response.status_code,200)
+            self.assertIn('"result": true',response.text)
+        for person in {'idtest_person2','idtest_person3','idtest_person4'}:
+            response =  restPost('person-to-work',{'person': person,'work': 'idtest_work4','relation': 'pramaana_pramatha'})
+            self.assertEqual(response.status_code,200)
+            self.assertIn('"result": true',response.text)
+        # ----------------get person-to-work tree--------------------------
+        gpers = restGet('tree-person-work/idtest_person1')
+        json.dump(gpers.content, open('jsondata/knowledgeTree-person-work-tree.json','w'))
+        # ----------------get work-to-person tree--------------------------
+        gwrk = restGet('tree-work-person/idtest_work4')
+        json.dump(gwrk.content, open('jsondata/knowledgeTree-work-person-tree.json','w'))
+        # ----------------remove all person work relations created--------------------------
+        for work in {'idtest_work1','idtest_work2','idtest_work3'}:
+            response =  restDeletewithData('person-to-work',{'person': 'idtest_person1','work': work,'relation': 'pramaana_pramatha'})
+            self.assertEqual(response.status_code,200)
+            self.assertIn('"result": true',response.text)
+        for person in {'idtest_person2','idtest_person3','idtest_person4'}:
+            response =  restDeletewithData('person-to-work',{'person': person,'work': 'idtest_work4','relation': 'pramaana_pramatha'})
+            self.assertEqual(response.status_code,200)
+            self.assertIn('"result": true',response.text)
+        # remove the persons created
+        for person in {'idtest_person1','idtest_person2','idtest_person3','idtest_person4'}:
+            response = restDelete('person/' + person)
+            self.assertEqual(response.status_code,200)
+        # remove the works created
+        for work in {'idtest_work1','idtest_work2','idtest_work3','idtest_work4'}:
+            response = restDelete('work/' + work)
+            self.assertEqual(response.status_code,200)
+
 if __name__ == '__main__':
     unittest.main()
