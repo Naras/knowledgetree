@@ -8,7 +8,7 @@
 
    <context-param>
       <param-name>org.richfaces.SKIN</param-name>
-      <param-value>blueSky</param-value>
+      <param-value>japanCherry</param-value>
    </context-param>
 
    <!-- Suppress spurious stylesheets -->

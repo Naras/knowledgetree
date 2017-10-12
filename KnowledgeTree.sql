@@ -2,8 +2,8 @@ SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL';
 
-DROP SCHEMA IF  EXISTS `knowledgetree` ;
-CREATE SCHEMA `knowledgetree` DEFAULT CHARACTER SET utf8 ;
+DROP SCHEMA IF EXISTS `knowledgetree` ;
+CREATE SCHEMA IF NOT EXISTS `knowledgetree` DEFAULT CHARACTER SET utf8 ;
 USE `knowledgetree`;
 
 -- -----------------------------------------------------
@@ -84,6 +84,11 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`person` (
   `Initials` CHAR(10) NULL DEFAULT NULL ,
   `Nick` CHAR(20) NULL DEFAULT NULL ,
   `Other` CHAR(30) NULL DEFAULT NULL ,
+  `Living` BOOLEAN NULL DEFAULT TRUE ,
+  `Birth` DATE NULL DEFAULT NULL ,
+  `Death` DATE NULL DEFAULT NULL ,
+  `Biography` VARCHAR(5000) NULL ,
+  `Period` VARCHAR(45) NULL COMMENT 'If dates are unknown, write general period.' ,
   PRIMARY KEY (`id`) )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
@@ -118,12 +123,10 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`address` (
   CONSTRAINT `fk_Address_District`
     FOREIGN KEY (`District_id` , `District_State_id` , `District_Country_id` )
     REFERENCES `knowledgetree`.`district` (`id` , `State_id` , `Country_id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT `fk_Address_Person`
     FOREIGN KEY (`Person` )
     REFERENCES `knowledgetree`.`person` (`id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -151,29 +154,6 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`affiliation` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
 COMMENT = 'An institution that a person is affiliated with';
-
-
--- -----------------------------------------------------
--- Table `knowledgetree`.`personlife`
--- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `knowledgetree`.`personlife` (
-  `id` CHAR(10) NOT NULL ,
-  `Living` BOOLEAN NULL DEFAULT TRUE ,
-  `Birth` DATE NULL DEFAULT NULL ,
-  `Death` DATE NULL DEFAULT NULL ,
-  `Period` CHAR(25) NULL DEFAULT NULL ,
-  `History` VARCHAR(255) NULL DEFAULT NULL ,
-  `Life` VARCHAR(255) NULL DEFAULT NULL ,
-  PRIMARY KEY (`id`) ,
-  INDEX `fk_PersonLife_Person` (`id` ASC) ,
-  CONSTRAINT `fk_PersonLife_Person`
-    FOREIGN KEY (`id` )
-    REFERENCES `knowledgetree`.`person` (`id` )
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COMMENT = 'The life of a person. May be a historical, fictional or even a mytholgical person';
 
 
 -- -----------------------------------------------------
@@ -255,12 +235,10 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`subject_has_work` (
   CONSTRAINT `fk_Subject_has_Work_Work`
     FOREIGN KEY (`Work` )
     REFERENCES `knowledgetree`.`work` (`id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT `fk_subject_has_work_work_subject_relation`
     FOREIGN KEY (`Relation` )
     REFERENCES `knowledgetree`.`work_subject_relation` (`id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -298,7 +276,6 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`subject_relatesto_subject` (
   CONSTRAINT `fk_subject_has_subject_subject1`
     FOREIGN KEY (`Subject2` )
     REFERENCES `knowledgetree`.`subject` (`id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT `fk_subject_relatesto_subject_subject_subject_relation`
     FOREIGN KEY (`Relation` )
@@ -424,7 +401,6 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`tagWork` (
   CONSTRAINT `fk_TagWork_TagWork`
     FOREIGN KEY (`BelongsTo` )
     REFERENCES `knowledgetree`.`tagWork` (`id` )
-    ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
@@ -609,7 +585,7 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`person_has_work` (
   PRIMARY KEY (`Person`, `Work`, `Relation`) ,
   INDEX `fk_person_has_work_person` (`Person` ASC) ,
   INDEX `fk_person_has_work_work` (`Work` ASC) ,
-  INDEX `fk_person_has_work_relation` (`Relation` ASC) ,
+  INDEX `fk_person_has_work_person_work_relation` (`Relation` ASC) ,
   CONSTRAINT `fk_person_has_work_person`
     FOREIGN KEY (`Person` )
     REFERENCES `knowledgetree`.`person` (`id` )
@@ -620,7 +596,7 @@ CREATE  TABLE IF NOT EXISTS `knowledgetree`.`person_has_work` (
     REFERENCES `knowledgetree`.`work` (`id` )
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT `fk_person_has_work_relation`
+  CONSTRAINT `fk_person_has_work_person_work_relation`
     FOREIGN KEY (`Relation` )
     REFERENCES `knowledgetree`.`person_work_relation` (`id` )
     ON DELETE RESTRICT

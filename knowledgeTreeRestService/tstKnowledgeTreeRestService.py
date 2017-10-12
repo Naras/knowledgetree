@@ -300,9 +300,18 @@ class TestUM(unittest.TestCase):
     def test_create_persons(self):
         # ----------------create a sample person--------------------------
         response =  restPost('person',{"id": "idtest", "first": "first", "last": "last","middle": "middle",   \
-                                  "initials": "ini", "nick":"nick", "other":"other"})
+                                  "initials": "ini", "nick":"nick", "other":"other", "living":1,"birth":"1955-01-01", \
+                                  "biography":"this was a great life, still not dead"})
         self.assertEqual(response.status_code,201)
-        self.assertIn('idtest',response.text)
+        self.assertIn('"id": "idtest"',response.text)
+        self.assertIn('"first": "first"',response.text)
+        self.assertIn('"middle": "middle"',response.text)
+        self.assertIn('"last": "last"',response.text)
+        self.assertIn('"nick": "nick"',response.text)
+        self.assertIn('"other": "other"',response.text)
+        self.assertIn('"living": 1',response.text)
+        self.assertIn('"birth": "1955-01-01"',response.text)
+        self.assertIn('"biography": "this was a great life, still not dead"',response.text)
         # ----------------create a duplicate of the person--------------------------
         '''
         response = restPost('person',{"id": "idtest", "first": "firstduplicate", "last": "lastduplicate","middle": "middle",   \
@@ -335,16 +344,8 @@ class TestUM(unittest.TestCase):
         # ----------------get the parent person------------------
         response=restGet('person/idtestParent')
         self.assertEqual(response.status_code,200)
-        response_text = response.text.replace('\n','').replace(' ','')
         # self.assertEqual( '{"person":{"first":"first-parent","id":"idtestParent","initials":"ini","last":"last-parent","middle":"middle-parent","nick":"nick-parent","other":"other-parent"}', \
         #     response.text.replace('\n','').replace(' ',''))
-        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
-        self.assertIn('"first":"first-parent"',response_text)
-        self.assertIn('"last":"last-parent"',response_text)
-        self.assertIn('"middle":"middle-parent"',response_text)
-        self.assertIn('"nick":"nick-parent"',response_text)
-        self.assertIn('"initials":"ini"',response_text)
-        self.assertIn('"other":"other-parent"',response_text)
         # print 'status:', response.status_code, '\n',response.text.replace('\n','').replace(' ','')
 
         # -----------------get the child person-----------------
@@ -352,13 +353,6 @@ class TestUM(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         # self.assertEqual( "{'person':{'last':'last-child','middle':'middle-child','nick':'nick-child','other':'other-child','first':'first-child','id':'idtestChild','initials':'ini'}", \
         #     response.text.replace('\n','').replace(' ','').replace(' ',''))
-        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
-        self.assertIn('"first":"first-child"',response_text)
-        self.assertIn('"last":"last-child"',response_text)
-        self.assertIn('"middle":"middle-child"',response_text)
-        self.assertIn('"nick":"nick-child"',response_text)
-        self.assertIn('"initials":"ini"',response_text)
-        self.assertIn('"other":"other-child"',response_text)
         response=restGet('person-to-person')
         # print response.text.replace('\n','').replace(' ','')
 
@@ -367,20 +361,21 @@ class TestUM(unittest.TestCase):
             response.text.replace('\n','').replace(' ',''))
     def test_modify_persons(self):
         # -----------------modify the parent----------------------
-        response =  restPut('person/idtestParent',{'id': 'idtestParent','first': 'first-parent-update','last': 'last-parent-update'})
+        response =  restPut('person/idtestParent',{'id': 'idtestParent','first': 'first-parent-update','last': 'last-parent-update', \
+                                                   'death':'2013-6-29'})
         # print 'status:', response.status_code, '\n',response.text
         self.assertEqual(response.status_code,201)
         # print 'status:', response.status_code, '\n', response.text.replace('\n','').replace(' ','')
         # self.assertEqual( "{'last': 'last-parent-update', 'middle': 'middle', 'nick': 'nick', 'other': 'other', 'first': 'first-parent-update', \
         #                   'id': 'idtest', 'initials': 'ini'}", \
         #     response.text.replace('\n','').replace(' ',''))
-        response_text = response.text.replace('\n','').replace(' ','').replace(' ','')
-        self.assertIn('"first":"first-parent-update"',response_text)
-        self.assertIn('"last":"last-parent-update"',response_text)
-        self.assertIn('"middle":null',response_text)
-        self.assertIn('"nick":null',response_text)
-        self.assertIn('"initials":null',response_text)
-        self.assertIn('"other":null',response_text)
+        self.assertIn('"first": "first-parent-update"',response.text)
+        self.assertIn('"last": "last-parent-update"',response.text)
+        self.assertIn('"middle": null',response.text)
+        self.assertIn('"nick": null',response.text)
+        self.assertIn('"initials": null',response.text)
+        self.assertIn('"other": null',response.text)
+        self.assertIn('"death": "2013-6-29"',response.text)
 
         # -------------------get the parent--------------------------
         response = restGet('person/idtestParent')

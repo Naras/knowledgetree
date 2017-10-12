@@ -454,11 +454,11 @@ def person_refreshGraph():
     g = nx.Graph()
     for row in personsJson:
         g.add_node(row['id'])
-        if 'first' in row: g.node[row['id']]['first'] = row['first']
-        if 'last' in row: g.node[row['id']]['last'] = row['last']
-        if 'middle' in row: g.node[row['id']]['middle'] = row['middle']
-        if 'nick' in row: g.node[row['id']]['nick'] = row['nick']
-        if 'other' in row: g.node[row['id']]['other'] = row['other']
+        # if 'first' in row: g.node[row['id']]['first'] = row['first']
+        # if 'last' in row: g.node[row['id']]['last'] = row['last']
+        # if 'middle' in row: g.node[row['id']]['middle'] = row['middle']
+        # if 'nick' in row: g.node[row['id']]['nick'] = row['nick']
+        # if 'other' in row: g.node[row['id']]['other'] = row['other']
     for row in prpJson:
         g.add_edge(row['person1'],row['person2'])
         g[row['person1']][row['person2']]['relation'] = row['relation']
@@ -478,6 +478,10 @@ def person_add_names(td):
         if 'middle' in dict: td['middle'] = dict['middle']
         if 'nick' in dict: td['nick'] = dict['nick']
         if 'other' in dict: td['other'] = dict['other']
+        if 'living' in dict: td['living'] = dict['living']
+        if 'birth' in dict: td['birth'] = dict['birth']
+        if 'death' in dict: td['death'] = dict['death']
+        if 'biography' in dict: td['biography'] = dict['biography']
         rel = person_find_relations(dict['id'])
         if not (rel==[]):
             td['relation']=rel[0]['relation']
@@ -490,86 +494,6 @@ def person_move_relation(person,newparent,newrelation=None):  # moves a person f
     person_delete_relation(relations[0]['related'],person,relations[0]['relation'])
     if newrelation == None: newrelation = relations[0]['relation']
     return person_create_relation(newparent,person,newrelation)
-def person_create(person):
-    if find_item_json_dict_list(personsJson,'id',person['id']) is not None:
-        # generate a random string and concatenate
-        person['id'] = (person['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
-    personsJson.append(person)
-
-    if 'first' in person: first=person['first']
-    else: first = None;
-    if 'middle' in person: middle=person['middle']
-    else: middle = None;
-    if 'last' in person: last=person['last']
-    else: last = None;
-    if 'initials' in person: initials=person['initials']
-    else: initials = None;
-    if 'nick' in person: nick=person['nick']
-    else: nick = None;
-    if 'other' in person: other=person['other']
-    else: other = None;
-
-    ktm.Person.create(id=person['id'],first=first,middle=middle,last=last,initials=initials,nick=nick,other=other)
-    return {'person': person}
-def person_create_with_relation(person_related_relation):
-    dict = person_related_relation #json.loads(person_related_relation)
-    person2 = dict['person']
-    person1id = dict['related']
-    relation = dict['relation']
-    if find_item_json_dict_list(personsJson,'id',person1id) is None:
-        return None
-    if find_item_json_dict_list(personsJson,'id',person2['id']) is not None:
-        # generate a random string and concatenate
-        person2['id'] = (person2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
-    person_create(person2)
-    return person_create_relation(person1id,person2['id'],relation)
-def person_delete(prs_id):
-    prs = find_item_json_dict_list(personsJson,'id',prs_id)
-    if prs is None or len(prs) == 0:
-        return False
-    for person_index in range(len(personsJson)):
-        # print subj_index,personsJson[subj_index],type(personsJson[subj_index])
-        # subj_as_dict = ast.literal_eval(personsJson[subj_index])
-        person_as_dict = personsJson[person_index]
-        if (person_as_dict['id'] == prs['id'] or person_as_dict[u'id'] == prs['id'] or person_as_dict['id'] == prs[u'id']):
-            # print 'db delete:', subj_as_dict, type(subj_as_dict)
-            personx = ktm.Person.get(ktm.Person.id == person_as_dict['id'])
-            personx.delete_instance()
-            del personsJson[person_index]
-            break
-    # personsJson.remove(sub)
-    return True #subj_as_dict
-def person_delete_with_relation(prs_id):
-    relations = person_find_relations(prs_id)
-    for person_with_relation in relations:
-        person1 = person_with_relation['related']
-        relation = person_with_relation['relation']
-        person_delete_relation(person1,prs_id,relation) # each relation with another person1 removed
-    person_delete(prs_id)
-    return True
-def person_update(prs_id,prs_in):
-    for index in range(len(personsJson)):
-        # json_acceptable_string = personsJson[index].replace("'", "\"")
-        dict = personsJson[index]
-        if dict['id'] == prs_id:
-            if 'first' in prs_in: dict['first'] = prs_in['first']
-            if 'last' in prs_in: dict['last'] = prs_in['last']
-            if 'middle' in prs_in: dict['middle'] = prs_in['middle']
-            if 'nick' in prs_in: dict['nick'] = prs_in['nick']
-            if 'other' in prs_in: dict['other'] = prs_in['other']
-            personsJson[index] = dict #json.dumps(dict)
-            pers = ktm.Person.get(ktm.Person.id == prs_id)
-            pers.first = dict['first']
-            pers.last = dict['last']
-            pers.middle = dict['middle']
-            pers.nick = dict['nick']
-            pers.other = dict['other']
-            pers.save()
-            # update relation if given
-            if 'relation' in prs_in:
-                person_update_relation(prs_id,prs_in['relation'])
-            return personsJson[index]
-    return None
 
 def find_person_work_relations(person,work):
     relations = []
@@ -1203,11 +1127,11 @@ def get_persons():
 def get_person(prs_id):
     # sub = [sub for sub in subjectsJson if sub['id'] == str(prs_id)]
     logging.debug(auth.username() + ':servicing JSON GET person: ' + prs_id)
-    wrk = find_item_json_dict_list(personsJson,'id',prs_id)
-    if wrk is None or len(wrk) == 0:
+    prs = find_item_json_dict_list(personsJson,'id',prs_id)
+    if prs is None or len(prs) == 0:
         logging.error('JSON GET id missing: ' + prs_id)
         abort(404)
-    return jsonify({'person': wrk})
+    return jsonify({'person': prs})
 @app.route(endpoint_prefix + 'person-person-relations', methods=['GET'])
 @auth.login_required
 def get_person_person_relations():
@@ -1269,9 +1193,31 @@ def create_person_with_relation():
             person2['id'] = (person2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
         # personx = person2 #ast.literal_eval(person2)
         # print "creating person-with-relation-2:", person2
+        if 'first' in person2: first = person2['first']
+        else: first = None
+        if 'middle' in person2: middle = person2['middle']
+        else: middle = None
+        if 'last' in person2: last = person2['last']
+        else: last = None
+        if 'nick' in person2: nick = person2['nick']
+        else: nick = None
+        if 'other' in person2: other = person2['other']
+        else: other = None
+        if 'other' in person2: other = person2['other']
+        else: other = None
+        if 'initials' in person2: initials = person2['initials']
+        else: initials = None
+        if 'living' in person2: living = person2['living']
+        else: living = None
+        if 'birth' in person2: birth = person2['birth']
+        else: birth = None
+        if 'death' in person2: death = person2['death']
+        else: death = None
+        if 'biography' in person2: biography = person2['biography']
+        else: biography = None
         try:
-            ktm.Person.create(id=person2['id'],first=person2['first'],last=person2['last'],middle=person2['middle'],nick=person2['nick'],other=person2['other'], \
-                              initials=person2['initials'])  # db create row
+            ktm.Person.create(id=person2['id'],first=first,last=last,middle=middle,nick=nick,other=other,initials=initials, \
+                              living=living,birth=birth,death=death,biography=biography)  # db create row
             personsJson.append(person2)
             response = person_create_relation(person1id,person2['id'],relation=relation)
         except peewee.IntegrityError:
@@ -1290,7 +1236,9 @@ def create_person():
             logging.error('incorrect request:' + str(request.json))
             abort(400)
         person = {"id": request.json['id'], "first": request.json['first'], "last": request.json.get('last', ""), "middle": request.json.get('middle', ""), \
-                  "nick": request.json.get('nick', ""), "initials": request.json.get('initials', ""), "other": request.json.get('other', "")}
+                  "nick": request.json.get('nick', ""), "initials": request.json.get('initials', ""), "other": request.json.get('other', ""), \
+                  "living": request.json.get('living', ""), "birth": request.json.get('birth', ""), "death": request.json.get('death', ""), \
+                  "biography": request.json.get('biography', "")}
         if find_item_json_dict_list(personsJson,'id',str(request.json['id'])) is not None:
             # subj = ast.literal_eval(str(sub))
             # generate a random string and concatenate - changes id to unique 20-char string
@@ -1305,8 +1253,16 @@ def create_person():
 def update_person(prs_id):
     if get_role(auth.username())in ['editor','admin']:
         logging.debug(auth.username() + ':servicing update person: ' + prs_id)
-        if (not request.json) or ('name' in request.json and type(request.json['first']) != unicode) \
+        if (not request.json) \
+                or ('first' in request.json and type(request.json['first']) != unicode) \
+                or ('middle' in request.json and type(request.json['middle']) != unicode) \
                 or ('last' in request.json and type(request.json['last']) is not unicode) \
+                or ('nick' in request.json and type(request.json['nick']) != unicode) \
+                or ('other' in request.json and type(request.json['other']) != unicode) \
+                or ('living' in request.json and type(request.json['living']) != unicode) \
+                or ('birth' in request.json and type(request.json['birth']) != unicode) \
+                or ('death' in request.json and type(request.json['death']) != unicode) \
+                or ('biography' in request.json and type(request.json['biography']) != unicode) \
                 or ('relation' in request.json and type(request.json['relation']) is not unicode):
             logging.error('JSON PUT error incorrect request:' + str(request.json))
             abort(400)
@@ -1320,6 +1276,10 @@ def update_person(prs_id):
                 dict['initials'] = request.json.get('initials', None)
                 dict['nick'] = request.json.get('nick', None)
                 dict['other'] = request.json.get('other', None)
+                dict['living'] = request.json.get('living', None)
+                dict['birth'] = request.json.get('birth', None)
+                dict['death'] = request.json.get('death', None)
+                dict['biography'] = request.json.get('biography', None)
                 personsJson[index] = dict #json.dumps(dict)
                 personx = ktm.Person.get(ktm.Person.id == prs_id)   # db get/update row
                 personx.first = dict['first']
@@ -1328,6 +1288,10 @@ def update_person(prs_id):
                 personx.initials = dict['initials']
                 personx.nick = dict['nick']
                 personx.other = dict['other']
+                personx.living = dict['living']
+                personx.birth = dict['birth']
+                personx.death = dict['death']
+                personx.biography = dict['biography']
                 personx.save()
                 if 'relation' in request.json:  # modify person_to_person if any change to relation or sort order
                     person_update_relation(prs_id,request.json.get('relation', None))

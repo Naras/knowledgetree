@@ -78,7 +78,7 @@
         <form id="ViewNodeForm">
             <div class="row">
                 <div class="large-12 columns">
-                    <div id="ViewPersonsElements">
+                    <div id="ViewPersonElements">
                         <label>First name
                                     <input type="text" class="inputName" id='ViewNodeFirst' placeholder="first name" onchange="generateIni()"/>
                                 <label>Middle name 
@@ -92,13 +92,21 @@
                                 <label>Other 
                                     <input type="text" class="inputName" id='ViewNodeOther' placeholder="nick name"/></label>
                         <label>Node id
-                                        <input type="text" class="inputName" id='ViewNodeId' placeholder="node id" />
+                                    <input type="text" class="inputName" id='ViewNodeId2' placeholder="node id" />
+                                    <label>Date of Birth
+                                        <input type="date" class="inputName" id="ViewNodeBirth" placeholder="date of birth" />
+                                    <label>Biography
+                                        <textarea id="ViewNodeBiography" class="inputName" placeholder="biography" rows="10"></textarea>
+                                    <label>Living Person
+                                            <input type="checkbox" class="inputName" id='ViewNodeLiving' />
+                                    <label  id="ViewNodeLabelDeath">Date of Death
+                                        <input type="date" class="inputName" id="ViewNodeDeath" placeholder="date of death" />
                                     </div>
-                            <div id="ViewSubjectsElements">
+                            <div id="ViewSubjectElements">
                                 <label>Node name
                                     <input type="text" class="inputName" id='ViewNodeName' placeholder="node name" onchange="generateId()"/>
                                 <label>Node id
-                                    <input type="text" class="inputName" id='ViewNodeId' placeholder="node id" />
+                                    <input type="text" class="inputName" id='ViewNodeId1' placeholder="node id" />
                                 <label>Node order
                                     <input type="text" class="inputName" id='ViewNodeOrder' placeholder="node order" />
                             <label>Node description
@@ -118,23 +126,31 @@
             <form id="RenameNodeForm">
                 <div class="row">
                     <div class="large-12 columns">
-                        <div id="RenamePersonsElements">
+                        <div id="RenamePersonElements">
                             <label>First name
                                     <input type="text" class="inputName" id='RenameNodeFirst' placeholder="first name" onchange="generateIni()"/>
-                                <label>Middle name 
-                                    <input type="text" class="inputName" id='RenameNodeMiddle' placeholder="middle name" onchange="generateIni()"/>
-                                <label>Last name 
-                                        <input type="text" class="inputName" id='RenameNodeLast' placeholder="lasst name" onchange="generateIni()"/>
-                                <label>Initials 
-                                        <input type="text" class="inputName" id='RenameNodeInitials' placeholder="initials" onchange="generateIdIni()"/>
-                                <label>Nick  name
-                                    <input type="text" class="inputName" id='RenameNodeNick' placeholder="nick name"/>
-                                <label>Other name
-                                    <input type="text" class="inputName" id='RenameNodeOther' placeholder="other name"/></label>
+                            <label>Middle name 
+                                <input type="text" class="inputName" id='RenameNodeMiddle' placeholder="middle name" onchange="generateIni()"/>
+                            <label>Last name 
+                                    <input type="text" class="inputName" id='RenameNodeLast' placeholder="last name" onchange="generateIni()"/>
+                            <label>Initials 
+                                    <input type="text" class="inputName" id='RenameNodeInitials' placeholder="initials" onchange="generateIdIni()"/>
+                            <label>Nick  name
+                                <input type="text" class="inputName" id='RenameNodeNick' placeholder="nick name"/>
+                            <label>Other name
+                                <input type="text" class="inputName" id='RenameNodeOther' placeholder="other name"/>
                             <label>Node id
-                                        <input type="text" class="inputName" id='RenameNodeId2' placeholder="node id" />
-                        </div>
-                        <div id="RenameSubjectsElements">
+                                <input type="text" class="inputName" id='RenameNodeId2' placeholder="id" />
+                            <label>Date of Birth
+                                <input type="date" class="inputName" id="RenameNodeBirth" placeholder="date of birth" />
+                            <label>Biography
+                                <textarea id="RenameNodeBiography" class="inputName" placeholder="biography" rows="10"></textarea>
+                            <label>Living Person
+                                <input type="checkbox" class="inputName" id='RenameNodeLiving' checked />
+                            <label id="RenameNodeLabelDeath">Date of Death
+                                <input type="date" class="inputName" id="RenameNodeDeath" placeholder="date of death" />
+                           </div>
+                        <div id="RenameSubjectElements">
                                 <label>Node name
                                     <input type="text" class="inputName" id='RenameNodeName' placeholder="node name" onchange="generateId()"/>
                                 <label>Node id
@@ -169,7 +185,7 @@
                 <form id="CreateNodeForm">
                     <div class="row">
                         <div class="large-12 columns">
-                            <div id="CreatePersonsElements">
+                            <div id="CreatePersonElements">
                                 <label>First name
                                 <input type="text" class="inputName" id='CreateNodeFirst' placeholder="first name" onchange="generateIni()"/>
                                 <label>Middle name 
@@ -184,8 +200,16 @@
                                <input type="text" class="inputName" id='CreateNodeOther' placeholder="other name"/></label>
                                 <label>Node id
                                 <input type="text" class="inputName" id='CreateNodeId2' placeholder="node id" />
-                            </div>
-                    <div id="CreateSubjectsElements">
+                                <label>Date of Birth
+                                    <input type="date" class="inputName" id="CreateNodeBirth" placeholder="date of birth" />
+                                    <label>Biography
+                                        <textarea id="CreateNodeBiography" class="inputName" placeholder="biography" rows="10"></textarea>
+                                        <label>Living Person
+                                        <input type="checkbox" class="inputName" id='CreateNodeLiving' checked />
+                                    <label id="CreateNodeLabelDeath">Date of Death
+                                    <input type="date" class="inputName" id="CreateNodeDeath" placeholder="date of death" />
+                                </div>
+                    <div id="CreateSubjectElements">
                         <label>Node name
                         <input type="text" class="inputName" id='CreateNodeName' placeholder="node name" onchange="generateId()"/>
                         <label>Node id
@@ -495,6 +519,26 @@
                                 this.selectionStart = this.selectionEnd = this.value.length;
                             });
                             element.focus();
+                        });
+                        $("#RenameNodeLiving").change(function() {
+                            if (this.checked) {
+                                $("#RenameNodeDeath").hide();
+                                $("#RenameNodeLabelDeath").hide();
+
+                            } else {
+                                $("#RenameNodeDeath").show();
+                                $("#RenameNodeLabelDeath").show();
+                            }
+                        });
+                        $("#CreateNodeLiving").change(function() {
+                            if (this.checked) {
+                                $("#CreateNodeDeath").hide();
+                                $("#CreateNodeLabelDeath").hide();
+
+                            } else {
+                                $("#CreateNodeDeath").show();
+                                $("#CreateNodeLabelDeath").show();
+                            }
                         });
                         $('#RenameNodeForm').submit(function(e) {
                             rename_node();

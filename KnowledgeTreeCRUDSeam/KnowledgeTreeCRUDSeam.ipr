@@ -39,7 +39,7 @@
       <option name="ENCODED_DATABASE_PASSWORD" value="dfd8dfc5dfc5dfdedf9bdf98df99" />
       <option name="DEFAULT_SCHEMA_NAME" />
       <option name="TABLE_PATTERN" value="" />
-      <option name="UUID" value="ccbf06a4-8bb9-4cf2-a9a1-23ae9fe25616" />
+      <option name="UUID" value="3d6f22e2-4e38-4604-8497-bd1476237443" />
       <option name="NAME" value="KnowledgeTreeCRUDSeamDatasource" />
       <libraries>
         <library>

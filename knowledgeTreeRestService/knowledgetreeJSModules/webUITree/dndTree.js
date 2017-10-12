@@ -156,6 +156,11 @@ function create_node() {
             initials = $('#CreateNodeInitials').val();
             nick = $('#CreateNodeNick').val();
             other = $('#CreateNodeOther').val();
+            if ($('#CreateNodeLiving').checked) living = '1';
+            else living = '0';
+            birth = $('#CreateNodeBirth').val();
+            death = $('#CreateNodeDeath').val();
+            biography = $('#CreateNodeBiography').val();
             new_node = {
                 'id': id,
                 'first': first,
@@ -164,11 +169,17 @@ function create_node() {
                 'initials': initials,
                 'nick': nick,
                 'other': other,
+                'living': living,
+                'birth': birth,
+                'death': death,
+                'biography': biography,
                 'relation': relation,
                 'depth': create_node_parent.depth + 1,
                 'children': [],
                 '_children': null
             };
+            create_node_parent.children.push(new_node);
+            create_node_modal_active = false;
         }
         var auth = getauth();
         console.log('Created Node: ' + id);
@@ -231,7 +242,11 @@ function create_node() {
                             "last": new_node.last,
                             "initials": new_node.initials,
                             "nick": new_node.nick,
-                            "other": new_node.other
+                            "other": new_node.other,
+                            "living": new_node.living,
+                            "birth": new_node.birth,
+                            "death": new_node.death,
+                            "biography": new_node.biography
                         },
                         "related": create_node_parent.id,
                         "relation": new_node.relation
@@ -270,6 +285,11 @@ function rename_node() {
             node_to_rename.initials = $('#RenameNodeInitials').val();
             node_to_rename.nick = $('#RenameNodeNick').val();
             node_to_rename.other = $('#RenameNodeOther').val();
+            if ($('#RenameNodeLiving').checked) node_to_rename.living = '1';
+            else node_to_rename.living = '0';
+            node_to_rename.birth = $('#RenameNodeBirth').val();
+            node_to_rename.death = $('#RenameNodeDeath').val();
+            node_to_rename.biography = $('#RenameNodeBiography').val();
         }
         var auth = getauth();
         if (currentValue == "Subject") {
@@ -311,6 +331,10 @@ function rename_node() {
                         "initials": node_to_rename.initials,
                         "nick": node_to_rename.nick,
                         "other": node_to_rename.other,
+                        "living": node_to_rename.living,
+                        "birth": node_to_rename.birth,
+                        "death": node_to_rename.death,
+                        "biography": node_to_rename.biography,
                         "relation": node_to_rename.relation
                     }),
                     function(err, rawdata) {
@@ -399,33 +423,50 @@ function draw_tree(error, treeData) {
     var menu = [{
             title: 'View node',
             action: function(elm, d, i) {
-                $("#ViewNodeId").val(d.id);
-                $("#ViewNodeId").prop('disabled', true);
                 if (currentValue == "Subject" || currentValue == "Work") {
-                    $('#ViewSubjectsElements').show()
-                    $('#ViewPersonsElements').hide()
+                    $('#ViewSubjectElements').show()
+                    $('#ViewPersonElements').hide()
+                    $("#ViewNodeId1").val(d.id);
                     $("#ViewNodeName").val(d.name);
                     $("#ViewNodeOrder").val(d.sortorder);
                     $("#ViewNodeDescription").val(d.description);
+                    $("#ViewNodeId1").prop('disabled', true);
                     $("#ViewNodeName").prop('disabled', true);
                     $("#ViewNodeOrder").prop('disabled', true);
                     $("#ViewNodeDescription").prop('disabled', true);
                 } else {
-                    // console.log("persons - form modfications")
-                    $('#ViewSubjectsElements').hide()
-                    $('#ViewPersonsElements').show()
+                    $('#ViewSubjectElements').hide();
+                    $('#ViewPersonElements').show();
+                    $("#ViewNodeId2").val(d.id);
                     $("#ViewNodeFirst").val(d.first);
                     $("#ViewNodeMiddle").val(d.middle);
                     $("#ViewNodeLast").val(d.last);
                     $("#ViewNodeInitials").val(d.initials);
                     $("#ViewNodeNick").val(d.nick);
                     $("#ViewNodeOther").val(d.other);
+                    if (d.living == "1") {
+                        $("#ViewNodeLiving").prop("checked", true);
+                        $("#ViewNodeDeath").hide();
+                        $("#ViewNodeLabelDeath").hide();
+                    } else {
+                        $("#ViewNodeLiving").prop("checked", false);
+                        $("#ViewNodeDeath").show();
+                        $("#ViewNodeLabelDeath").show();
+                    }
+                    $("#ViewNodeBirth").val(d.birth);
+                    $("#ViewNodeDeath").val(d.death);
+                    $("#ViewNodeBiography").val(d.biography);
+                    $("#ViewNodeId2").prop('disabled', true);
                     $("#ViewNodeFirst").prop('disabled', true);
                     $("#ViewNodeMiddle").prop('disabled', true);
                     $("#ViewNodeLast").prop('disabled', true);
                     $("#ViewNodeInitials").prop('disabled', true);
                     $("#ViewNodeNick").prop('disabled', true);
                     $("#ViewNodeOther").prop('disabled', true);
+                    $("#ViewNodeLiving").prop('disabled', true);
+                    $("#ViewNodeBirth").prop('disabled', true);
+                    $("#ViewNodeDeath").prop('disabled', true);
+                    $("#ViewNodeBiography").prop('disabled', true);
                 }
                 $("#ViewNodeRelation").val(d.relation);
                 view_node_modal_active = true;
@@ -441,16 +482,16 @@ function draw_tree(error, treeData) {
                 create_node_modal_active = true;
                 $('#CreateNodeModal').foundation('reveal', 'open');
                 if (currentValue == "Subject" || currentValue == "Work") {
-                    $('#CreateSubjectsElements').show();
-                    $('#CreatePersonsElements').hide();
+                    $('#CreateSubjectElements').show();
+                    $('#CreatePersonElements').hide();
                     $('#CreateNodeId1').val('');
                     $('#CreateNodeName').val('');
                     $('#CreateNodeDescription').val('');
                     $('#CreateNodeOrder').val('');
                 } else {
                     // console.log("persons - form modfications")
-                    $('#CreateSubjectsElements').hide();
-                    $('#CreatePersonsElements').show();
+                    $('#CreateSubjectElements').hide();
+                    $('#CreatePersonElements').show();
                     $('#CreateNodeFirst').val('');
                     $('#CreateNodeMiddle').val('');
                     $('#CreateNodeLast').val('');
@@ -458,6 +499,12 @@ function draw_tree(error, treeData) {
                     $('#CreateNodeNick').val('');
                     $('#CreateNodeOther').val('');
                     $('#CreateNodeId2').val('');
+                    $('#CreateNodeLiving').prop("checked", true);
+                    $('#CreateNodeBirth').val('');
+                    $('#CreateNodeDeath').val('');
+                    $('#CreateNodeLabelDeath').hide();
+                    $('#CreateNodeDeath').hide();
+                    $('#CreateNodeBiography').val('');
                 }
                 promise_relations().then(); // refresh relations list
             }
@@ -466,17 +513,17 @@ function draw_tree(error, treeData) {
             title: 'Edit node',
             action: function(elm, d, i) {
                 if (currentValue == "Subject" || currentValue == "Work") {
-                    $('#RenameSubjectsElements').show()
-                    $('#RenamePersonsElements').hide()
+                    $('#RenameSubjectElements').show();
+                    $('#RenamePersonElements').hide();
                     $("#RenameNodeId1").val(d.id);
                     $("#RenameNodeName").val(d.name);
                     $("#RenameNodeOrder").val(d.sortorder);
                     $("#RenameNodeDescription").val(d.description);
                     $("#RenameNodeId1").prop('disabled', true);
+                    $("#RenameNodeName").focus();
                 } else {
-                    // console.log("persons - form modfications")
-                    $('#RenameSubjectsElements').hide()
-                    $('#RenamePersonsElements').show()
+                    $('#RenameSubjectElements').hide();
+                    $('#RenamePersonElements').show();
                     $("#RenameNodeId2").val(d.id);
                     $("#RenameNodeFirst").val(d.first);
                     $("#RenameNodeMiddle").val(d.middle);
@@ -484,11 +531,23 @@ function draw_tree(error, treeData) {
                     $("#RenameNodeInitials").val(d.initials);
                     $("#RenameNodeNick").val(d.nick);
                     $("#RenameNodeOther").val(d.other);
-                    $("#RenameNodeName").focus();
-                    $('#RenameNodeModal').foundation('reveal', 'open');
                     $("#RenameNodeId2").prop('disabled', true);
+                    if (d.living == "1") {
+                        $("#RenameNodeLiving").prop("checked", true);
+                        $("#RenameNodeDeath").hide();
+                        $("#RenameNodeLabelDeath").hide();
+                    } else {
+                        $("#RenameNodeLiving").prop("checked", false);
+                        $("#RenameNodeDeath").show();
+                        $("#RenameNodeLabelDeath").show();
+                    }
+                    $("#RenameNodeBirth").val(d.birth);
+                    $("#RenameNodeDeath").val(d.death);
+                    $("#RenameNodeBiography").val(d.biography);
+                    $("#RenameNodeFirst").focus();
                 }
                 $("#RenameNodeRelation").val(d.relation);
+                $('#RenameNodeModal').foundation('reveal', 'open');
                 rename_node_modal_active = true;
                 node_to_rename = d;
             }
@@ -681,7 +740,6 @@ function draw_tree(error, treeData) {
     function sortTree() {
         tree.sort(function(a, b) {
             if (currentValue == "Person") return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
-            // console.log(typeof(b.sortorder), b.sortorder);
             var b_order = b.sortorder;
             if (typeof(b_order) == "string") {
                 if (b_order.length < 2) b_order = "0" + b_order;
@@ -1053,8 +1111,18 @@ function draw_tree(error, treeData) {
             else m = d.middle;
             if (typeof(d.last) == "undefined") l = "";
             else l = d.last;
+            if (typeof(d.birth) == "undefined") birth = "birth:unknown";
+            else birth = "birth:" + d.birth;
+            if (typeof(d.death) == "undefined") death = "death:unknown";
+            else death = d.death;
+            if (typeof(d.living) == "undefined") death = "death:unknown";
+            else if (d.living == 1) death = "";
+            if (typeof(d.biography) == "undefined") biography = "unknown";
+            else biography = d.biography;
             displayDoc.document.write("<head><title>" + f + ' ' + m + ' ' + l + "</title></head><body>" +
-                "<h2>Name:" + f + ' ' + m + ' ' + l + "</h2><br/>" + "<p>Description:" + "description not yet avaliable" +
+                "<h2>Name:" + f + ' ' + m + ' ' + l + "</h2><br/>" +
+                "<p>" + birth + death + "<br/>" +
+                "<p>Biography:" + biography +
                 "</p><body>");
         }
     }

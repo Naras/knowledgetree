@@ -38,12 +38,17 @@ class BaseModel(Model):
         database = database
 
 class Person(BaseModel):
+    biography = CharField(db_column='Biography', null=True)
+    birth = DateField(db_column='Birth', null=True)
+    death = DateField(db_column='Death', null=True)
     first = CharField(db_column='First', null=True)
     initials = CharField(db_column='Initials', null=True)
     last = CharField(db_column='Last', null=True)
+    living = IntegerField(db_column='Living', null=True)
     middle = CharField(db_column='Middle', null=True)
     nick = CharField(db_column='Nick', null=True)
     other = CharField(db_column='Other', null=True)
+    period = CharField(db_column='Period', null=True)
     id = CharField(primary_key=True)
 
     class Meta:

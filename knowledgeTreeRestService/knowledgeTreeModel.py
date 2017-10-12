@@ -57,12 +57,17 @@ class District(BaseModel):
         primary_key = CompositeKey('country', 'id', 'state')
 
 class Person(BaseModel):
+    biography = CharField(db_column='Biography', null=True)
+    birth = DateField(db_column='Birth', null=True)
+    death = DateField(db_column='Death', null=True)
     first = CharField(db_column='First', null=True)
     initials = CharField(db_column='Initials', null=True)
     last = CharField(db_column='Last', null=True)
+    living = IntegerField(db_column='Living', null=True)
     middle = CharField(db_column='Middle', null=True)
     nick = CharField(db_column='Nick', null=True)
     other = CharField(db_column='Other', null=True)
+    period = CharField(db_column='Period', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
@@ -179,18 +184,6 @@ class PersonRelatestoPerson(BaseModel):
             (('person1', 'person2', 'relation'), True),
         )
         primary_key = CompositeKey('person1', 'person2', 'relation')
-
-class Personlife(BaseModel):
-    birth = DateField(db_column='Birth', null=True)
-    death = DateField(db_column='Death', null=True)
-    history = CharField(db_column='History', null=True)
-    life = CharField(db_column='Life', null=True)
-    living = IntegerField(db_column='Living', null=True)
-    period = CharField(db_column='Period', null=True)
-    id = ForeignKeyField(db_column='id', primary_key=True, rel_model=Person, to_field='id')
-
-    class Meta:
-        db_table = 'personlife'
 
 class Script(BaseModel):
     name = CharField(db_column='Name', null=True)
