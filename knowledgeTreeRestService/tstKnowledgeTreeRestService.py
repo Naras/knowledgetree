@@ -4,6 +4,7 @@ __author__ = 'NarasMG'
 import json, requests, unittest #, pprint
 import networkx as nx
 from networkx.readwrite import json_graph
+import random
 
 # prefix = 'http://ec2-35-165-187-16.us-west-2.compute.amazonaws.com:5000/knowledgeTree/api/v1.0/'
 prefix = 'http://127.0.0.1:5000/knowledgeTree/api/v1.0/'
@@ -111,6 +112,24 @@ class TestUM(unittest.TestCase):
         self.assertIn( \
         '{"relation":"Anga","sortorder":65,"subject1":"idtestParent","subject2":"idtestChild"}', \
             response.text.replace('\n','').replace(' ',''))
+
+        # ----------------create a new target subject--------------------------
+        response = restPost('subject',
+                            {'id': 'idtestTarget', 'name': 'name-test-target', 'description': 'description-test-target'})
+        self.assertEqual(response.status_code,201)
+        # ----------------create a source subject--------------------------
+        response =  restPost('subject',{'id': 'idtestSource','name': 'name-test-parent','description': 'description-test-parent'})
+        # print 'status:', response.status_code, '\n',response.text
+        # create child subjects
+        for id in ['idtestChild1','idtestChild2','idtestChild3']:
+            order = random.choice(range(1,10))
+            response = restPost('subject-with-relation', \
+                            {"subject": {"id": id, "name": "name-test-child", "description": "description-test-child"},
+                             "related": "idtestSource", "relation": "Anga","sortorder": order })
+            self.assertEqual(response.status_code,200)
+            self.assertEqual ('{"subject":true}',response.text.replace('\n','').replace(' ',''))
+        response = restPost('subject-copy/idtestSource',{'id':'idtestTarget'})  # copy source subtree to target
+
     def test_modify_subjects(self):
         # -----------------modify the parent----------------------
         response =  restPut('subject/idtestParent',{'id': 'idtestParent','name': 'name-test-parent-update','description': 'description-test-parent-update'})
@@ -137,14 +156,18 @@ class TestUM(unittest.TestCase):
     def test_remove_subjects(self):
         # ------------------remove the child & its relation-------------
         response = restDelete('subject-with-relation/idtestChild')
-        # print 'status:', response.status_code, '\n',response.text
         self.assertEqual(response.status_code,200)
+        # response = restDelete('subject-with-relation/idtestNewChild')
+        # self.assertEqual(response.status_code,200)
         # ----------------------remove the parent-------------------
         response = restDelete('subject/idtestParent')
-        # print 'status:', response.status_code, '\n',response.text
         self.assertEqual(response.status_code,200)
-        # ----------------------remove the sample subject-------------------
+        # ----------------------remove the sample subjects-------------------
         response = restDelete('subject/idtest')
+        self.assertEqual(response.status_code,200)
+        response = restDelete('subtree/idtestSource')
+        self.assertEqual(response.status_code,200)
+        response = restDelete('subtree/idtestTarget')
         self.assertEqual(response.status_code,200)
 
     def test_works(self):
@@ -206,6 +229,23 @@ class TestUM(unittest.TestCase):
         self.assertIn( \
         '{"relation":"derived","sortorder":65,"work1":"idtestParent","work2":"idtestChild"}', \
             response.text.replace('\n','').replace(' ',''))
+        # ----------------create a new target work--------------------------
+        response = restPost('work',
+                            {'id': 'idtestTarget', 'name': 'name-test-target', 'description': 'description-test-target'})
+        self.assertEqual(response.status_code,201)
+        # ----------------create a source work--------------------------
+        response =  restPost('work',{'id': 'idtestSource','name': 'name-test-parent','description': 'description-test-parent'})
+        # print 'status:', response.status_code, '\n',response.text
+        # create child works
+        for id in ['idtestChild1','idtestChild2','idtestChild3']:
+            order = random.choice(range(1,10))
+            response = restPost('work-with-relation', \
+                            {"work": {"id": id, "name": "name-test-child", "description": "description-test-child"},
+                             "related": "idtestSource", "relation": "partwhole","sortorder": order })
+            self.assertEqual(response.status_code,200)
+            self.assertEqual ('{"work":true}',response.text.replace('\n','').replace(' ',''))
+        response = restPost('work-copy/idtestSource',{'id':'idtestTarget'})  # copy source subtree to target
+
     def test_modify_works(self):
         # -----------------modify the parent----------------------
         response =  restPut('work/idtestParent',{'id': 'idtestParent','name': 'name-test-parent-update','description': 'description-test-parent-update'})
@@ -240,6 +280,10 @@ class TestUM(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         # ----------------------remove the sample work-------------------
         response = restDelete('work/idtest')
+        self.assertEqual(response.status_code,200)
+        response = restDelete('subtree/idtestSource')
+        self.assertEqual(response.status_code,200)
+        response = restDelete('subtree/idtestTarget')
         self.assertEqual(response.status_code,200)
 
     def test_subject_to_work(self):

@@ -165,6 +165,7 @@
               </label>
                             <datalist id="renameRelationList">
                 </datalist>
+                            <label id="RenameNodeLabelStatus">Status: Data Entry In Progress</label>
                         </div>
                     </div>
                     <div class="row">
@@ -222,8 +223,8 @@
                 <label>Node relation
                   <input type="text" list="createRelationList" class="inputName" id='CreateNodeRelation' placeholder="node relation" />
               </label>
-                                <datalist id="createRelationList">
-                </datalist>
+                                <datalist id="createRelationList"></datalist>
+                                <label id="CreateNodeLabelStatus">Status: Data Entry In Progress</label>
                             </div>
                         </div>
                         <div class="row">
@@ -262,6 +263,32 @@
                             <div class="large-4 columns">
                                 <!--<a href="#" class="button info" onclick="close_move_node_modal()">Cancel</a>-->
                                 <a href="#" class="button success" onclick="move_node()">Move</a>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+                </div>
+                <div id="CopyNodeModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+                    <h2 id="modalTitle">Copy Node</h2>
+                    <form id="CopyNodeForm">
+                        <div class="row">
+                            <div class="large-12 columns">
+                                <label>Node id
+                        <input type="text" class="inputName" id='CopyNodeId' placeholder="node id" />
+                        <label> New Parent Node
+                        <input type="text" list="CopyParentList" class="inputName" id='CopyParentNode' placeholder="parent node list" />
+                    </label>
+                                <datalist id="CopyParentList">
+                    </datalist>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-8 columns">
+                                &nbsp;
+                            </div>
+                            <div class="large-4 columns">
+                                <!--<a href="#" class="button info" onclick="close_move_node_modal()">Cancel</a>-->
+                                <a href="#" class="button success" onclick="copy_node()">Copy</a>
                             </div>
                         </div>
                     </form>
@@ -524,20 +551,36 @@
                             if (this.checked) {
                                 $("#RenameNodeDeath").hide();
                                 $("#RenameNodeLabelDeath").hide();
-
                             } else {
+                                $("#RenameNodeDeath").val($("#RenameNodeBirth").val());
                                 $("#RenameNodeDeath").show();
                                 $("#RenameNodeLabelDeath").show();
+                            }
+                        });
+                        $("#RenameNodeDeath").change(function() {
+                            if ($("#RenameNodeDeath").val() < $("#RenameNodeBirth").val()) {
+                                $("#RenameNodeLabelStatus").text("Error: Death " + $("#RenameNodeDeath").val() +
+                                    " before birth " + $("#RenameNodeBirth").val() + " disallowed;-)");
+                                $("#RenameNodeDeath").css("color", "red");
+                                $("#RenameNodeDeath").val($("#RenameNodeBirth").val());
                             }
                         });
                         $("#CreateNodeLiving").change(function() {
                             if (this.checked) {
                                 $("#CreateNodeDeath").hide();
                                 $("#CreateNodeLabelDeath").hide();
-
                             } else {
+                                $("#CreateNodeDeath").val($("#CreateNodeBirth").val());
                                 $("#CreateNodeDeath").show();
                                 $("#CreateNodeLabelDeath").show();
+                            }
+                        });
+                        $("#CreateNodeDeath").change(function() {
+                            if ($("#CreateNodeDeath").val() < $("#CreateNodeBirth").val()) {
+                                $("#CreateNodeLabelStatus").text("Error: Death " + $("#CreateNodeDeath").val() +
+                                    " before birth " + $("#CreateNodeBirth").val() + " disallowed;-)");
+                                $("#CreateNodeDeath").css("color", "red");
+                                $("#CreateNodeDeath").val($("#CreateNodeBirth").val());
                             }
                         });
                         $('#RenameNodeForm').submit(function(e) {

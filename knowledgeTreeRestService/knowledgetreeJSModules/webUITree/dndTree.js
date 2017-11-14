@@ -10,9 +10,11 @@ var node_to_view = null;
 var create_node_modal_active = false;
 var rename_node_modal_active = false;
 var move_node_modal_active = false;
+var copy_node_modal_active = false;
 var create_node_parent = null;
 var node_to_rename = null;
-var node_to_move = null;
+var node_to_move_copy = null;
+var node_to_copy = null;
 var allNodes = [];
 
 var with_relation = "subject-with-relation";
@@ -144,10 +146,10 @@ function create_node() {
             };
             create_node_parent.children.push(new_node);
             create_node_modal_active = false;
-            $('#CreateNodeId').val('');
-            $('#CreateNodeName').val('');
-            $('#CreateNodeDescription').val('');
-            $('#CreateNodeOrder').val('');
+            // $('#CreateNodeId1').val('');
+            // $('#CreateNodeName').val('');
+            // $('#CreateNodeDescription').val('');
+            // $('#CreateNodeOrder').val('');
         } else { // persons
             id = $('#CreateNodeId2').val();
             first = $('#CreateNodeFirst').val();
@@ -156,7 +158,7 @@ function create_node() {
             initials = $('#CreateNodeInitials').val();
             nick = $('#CreateNodeNick').val();
             other = $('#CreateNodeOther').val();
-            if ($('#CreateNodeLiving').checked) living = '1';
+            if ($('#CreateNodeLiving').is(':checked')) living = '1';
             else living = '0';
             birth = $('#CreateNodeBirth').val();
             death = $('#CreateNodeDeath').val();
@@ -178,12 +180,12 @@ function create_node() {
                 'children': [],
                 '_children': null
             };
+            // $('#CreateNodeLabelStatus').text("Created Node " + id);
             create_node_parent.children.push(new_node);
             create_node_modal_active = false;
         }
         var auth = getauth();
         console.log('Created Node: ' + id);
-        // if (persons_works_or_persons_list == "works") {
         if (currentValue == "Subject") {
             with_relations = "subject-with-relation";
             d3.xhr(url + with_relations)
@@ -277,7 +279,6 @@ function rename_node() {
             node_to_rename.sortorder = $('#RenameNodeOrder').val();
             node_to_rename.description = $('#RenameNodeDescription').val();
         } else {
-            $('#RenameNodeId2').disabled = true;
             node_to_rename.id = $('#RenameNodeId2').val();
             node_to_rename.first = $('#RenameNodeFirst').val();
             node_to_rename.middle = $('#RenameNodeMiddle').val();
@@ -285,7 +286,7 @@ function rename_node() {
             node_to_rename.initials = $('#RenameNodeInitials').val();
             node_to_rename.nick = $('#RenameNodeNick').val();
             node_to_rename.other = $('#RenameNodeOther').val();
-            if ($('#RenameNodeLiving').checked) node_to_rename.living = '1';
+            if ($('#RenameNodeLiving').is(':checked')) node_to_rename.living = '1';
             else node_to_rename.living = '0';
             node_to_rename.birth = $('#RenameNodeBirth').val();
             node_to_rename.death = $('#RenameNodeDeath').val();
@@ -295,6 +296,25 @@ function rename_node() {
         if (currentValue == "Subject") {
             with_relations = "subject-with-relation";
             subject_work_or_person = "subject/";
+            d3.xhr(url + subject_work_or_person + node_to_rename.id)
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Basic " + btoa(auth))
+                .send("PUT",
+                    JSON.stringify({
+                        "name": node_to_rename.name,
+                        "description": node_to_rename.description,
+                        "relation": node_to_rename.relation,
+                        "sortorder": node_to_rename.sortorder
+                    }),
+                    function(err, rawdata) {
+                        if (err) console.log("error:", err)
+                        else {
+                            try {
+                                console.log("response:", rawdata.response, "status:", rawdata.status);
+                            } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        }
+                    }
+                );
         } else if (currentValue == "Work") {
             with_relations = "work-with-relation";
             subject_work_or_person = "work/";
@@ -355,24 +375,26 @@ function rename_node() {
 }
 
 function move_node() {
-    if (node_to_move && move_node_modal_active) {
+    if (node_to_move_copy && move_node_modal_active) {
         $('#MoveNodeId').disabled = true;
-        node_to_move.id = $('#MoveNodeId').val();
-        node_to_move.parent = $('#MoveParentNode').val();
-        node_to_move.sortorder = $('#MoveNodeOrder').val();
-        // console.log('Moving Node: ' + node_to_move.id + ' To Node: ' + node_to_move.parent);
+        node_to_move_copy.id = $('#MoveNodeId').val();
+        node_to_move_copy.parent = $('#MoveParentNode').val();
+        node_to_move_copy.sortorder = $('#MoveNodeOrder').val();
+        // console.log('Moving Node: ' + node_to_move_copy.id + ' To Node: ' + node_to_move_copy.parent);
         $('#MoveParentNodeId').val('');
         // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
-        if (subjects_works_or_persons_list == "works") move_what = "subject-move/";
-        else move_what = "work-move/"
-        d3.xhr(url + move_what + node_to_move.id)
+        // if (subjects_works_or_persons_list == "works") move_copy_what = "subject-move/";
+        if (currentValue == "Subject") move_copy_what = "subject-move/";
+        else if (currentValue == "Work") move_copy_what = "work-move/";
+        else move_copy_what = "person-move/"
+        d3.xhr(url + move_copy_what + node_to_move_copy.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
                 JSON.stringify({
-                    "id": node_to_move.parent,
-                    "sortorder": node_to_move.sortorder
+                    "id": node_to_move_copy.parent,
+                    "sortorder": node_to_move_copy.sortorder
                 }),
                 function(err, rawdata) {
                     if (err) console.log("error:", err)
@@ -383,10 +405,46 @@ function move_node() {
                     }
                 }
             );
-        console.log('Moved Node: ' + node_to_move.id + " Under: " + node_to_move.parent + "order:" + node_to_move.sortorder);
+        console.log('Moved Node: ' + node_to_move_copy.id + " Under: " + node_to_move_copy.parent + "order:" + node_to_move_copy.sortorder);
         move_node_modal_active = false;
         close_modal();
-        outer_update(node_to_move);
+        outer_update(node_to_move_copy);
+    }
+}
+
+function copy_node() {
+    if (node_to_copy && copy_node_modal_active) {
+        $('#CopyNodeId').disabled = true;
+        node_to_copy.id = $('#CopyNodeId').val();
+        node_to_copy.parent = $('#CopyParentNode').val();
+        // console.log('Copying Node: ' + node_to_copy.id + ' To Node: ' + node_to_copy.parent);
+        $('#CopyParentNodeId').val('');
+        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
+        var auth = getauth();
+        // if (subjects_works_or_persons_list == "works") copy_what = "subject-copy/";
+        if (currentValue == "Subject") copy_what = "subject-copy/";
+        else if (currentValue == "Subject") copy_what = "work-copy/";
+        else copy_what = "person-copy/";
+        d3.xhr(url + copy_what + node_to_copy.id)
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Basic " + btoa(auth))
+            .post(
+                JSON.stringify({
+                    "id": node_to_copy.parent,
+                }),
+                function(err, rawdata) {
+                    if (err) console.log("error:", err)
+                    else {
+                        try {
+                            console.log("response:", rawdata.response, "status:", rawdata.status);
+                        } catch (error) { console.log("error:", err, "response:", rawdata) };
+                    }
+                }
+            );
+        console.log('Copied Node: ' + node_to_copy.id + " Under: " + node_to_copy.parent);
+        copy_node_modal_active = false;
+        close_modal();
+        outer_update(node_to_copy);
     }
 }
 outer_update = null;
@@ -480,16 +538,25 @@ function draw_tree(error, treeData) {
             action: function(elm, d, i) {
                 create_node_parent = d;
                 create_node_modal_active = true;
+                $("#CreateNodeLabelStatus").text('Status: Data entry in progress');
                 $('#CreateNodeModal').foundation('reveal', 'open');
-                if (currentValue == "Subject" || currentValue == "Work") {
+                if (currentValue == "Subject") {
                     $('#CreateSubjectElements').show();
                     $('#CreatePersonElements').hide();
                     $('#CreateNodeId1').val('');
                     $('#CreateNodeName').val('');
                     $('#CreateNodeDescription').val('');
                     $('#CreateNodeOrder').val('');
+                    $('#CreateNodeRelation').val('Anga');
+                } else if (currentValue == "Work") {
+                    $('#CreateSubjectElements').show();
+                    $('#CreatePersonElements').hide();
+                    $('#CreateNodeId1').val('');
+                    $('#CreateNodeName').val('');
+                    $('#CreateNodeDescription').val('');
+                    $('#CreateNodeOrder').val('');
+                    $('#CreateNodeRelation').val('partwhole');
                 } else {
-                    // console.log("persons - form modfications")
                     $('#CreateSubjectElements').hide();
                     $('#CreatePersonElements').show();
                     $('#CreateNodeFirst').val('');
@@ -505,6 +572,7 @@ function draw_tree(error, treeData) {
                     $('#CreateNodeLabelDeath').hide();
                     $('#CreateNodeDeath').hide();
                     $('#CreateNodeBiography').val('');
+                    $('#CreateNodeRelation').val('gurushishya');
                 }
                 promise_relations().then(); // refresh relations list
             }
@@ -546,6 +614,7 @@ function draw_tree(error, treeData) {
                     $("#RenameNodeBiography").val(d.biography);
                     $("#RenameNodeFirst").focus();
                 }
+                $("#RenameNodeLabelStatus").text('Status: Data entry in progress');
                 $("#RenameNodeRelation").val(d.relation);
                 $('#RenameNodeModal').foundation('reveal', 'open');
                 rename_node_modal_active = true;
@@ -586,7 +655,6 @@ function draw_tree(error, treeData) {
                     $("#ConnectSubjectNode").prop('disabled', false);
                     $('#ConnectWorkNode').focus();
                 } else {
-                    // alert("case persons");
                     $('#ConnectNodeSubjectElements').hide();
                     $('#ConnectNodePersonElements').show();
                     $("#ConnectPersonNode").val(d.id);
@@ -608,10 +676,10 @@ function draw_tree(error, treeData) {
             }
         },
         {
-            title: 'Move node',
+            title: 'Move Subtree',
             action: function(elm, d, i) {
                 move_node_modal_active = true;
-                node_to_move = d;
+                node_to_move_copy = d;
                 getAllnodes(treeData, d.id);
                 var count = allNodes.length;
                 for (var i = 0; i < count; i++) {
@@ -621,6 +689,21 @@ function draw_tree(error, treeData) {
                 $("#MoveNodeOrder").val(d.sortorder);
                 $('#MoveParentNodeId').focus();
                 $('#MoveNodeModal').foundation('reveal', 'open');
+            }
+        },
+        {
+            title: 'Copy Subtree',
+            action: function(elm, d, i) {
+                copy_node_modal_active = true;
+                node_to_copy = d;
+                getAllnodes(treeData, d.id);
+                var count = allNodes.length;
+                for (var i = 0; i < count; i++) {
+                    $('#CopyParentList').append("<option value=\"" + allNodes[i] + "\"></option>");
+                }
+                $("#CopyNodeId").val(d.id);
+                $('#CopyParentNodeId').focus();
+                $('#CopyNodeModal').foundation('reveal', 'open');
             }
         },
         {
@@ -639,6 +722,12 @@ function draw_tree(error, treeData) {
                         draw_tree(err, content);
                     }
                 });
+            }
+        },
+        {
+            title: 'Remove Subtree',
+            action: function(elm, d, i) {
+                delete_subtree(d);
             }
         }
     ]
@@ -734,6 +823,42 @@ function draw_tree(error, treeData) {
         console.log('Removed Node id: ' + node.id);
     }
 
+    function delete_subtree(node) {
+        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
+        var auth = getauth();
+        if (currentValue == "Subject") subtree = "subtree/";
+        else if (currentValue == "Work") subtree = "subtree-work/";
+        else subtree = "subtree-person/";
+        d3.xhr(url + subtree + node.id)
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Basic " + btoa(auth))
+            .send("DELETE",
+                function(err, rawdata) {
+                    if (err) console.log("error:", err)
+                    else {
+                        try {
+                            // var data = JSON.parse(str_replace(chr(13), str_replace(chr(10), rawdata)));
+                            console.log("response:", rawdata.response, "status:", rawdata.status);
+                        } catch (error) { console.log("error:", err, "response:", rawdata) };
+                        visit(treeData, function(d) {
+                                if (d.children) {
+                                    for (var child of d.children) {
+                                        if (child == node) {
+                                            d.children = _.without(d.children, child);
+                                            update(root);
+                                            break;
+                                        }
+                                    }
+                                }
+                            },
+                            function(d) {
+                                return d.children && d.children.length > 0 ? d.children : null;
+                            });
+                    }
+                });
+        console.log('Removed Subtree id: ' + node.id);
+    }
+
 
     // sort the tree according to the node names
 
@@ -794,14 +919,23 @@ function draw_tree(error, treeData) {
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
     var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
 
-    function movenode(node_to_move, theparent) {
-        strconfirm = confirm("Are you sure you want to move " + node_to_move + " to " + theparent);
-        if (strconfirm == false) return false;
+    function move_copy_node(node_to_move_copy, theparent) {
+        strconfirm = confirm("Are you sure you want to move/copy " + node_to_move_copy + " to " + theparent);
+        if (strconfirm == false) return 'Cancelled';
         var auth = getauth();
-        if (currentValue == "subjects") move_what = "subject-move/";
-        else if (currentValue == "subjects") move_what = "work-move/";
-        else move_what = "person-move/";
-        d3.xhr(url + move_what + node_to_move)
+        strconfirm = confirm("Click Ok to Copy - OR - Cancel to Move :-) " + node_to_move_copy + " to " + theparent);
+        if (strconfirm == false) {
+            movecopy = "Moved";
+            if (currentValue == "Subject") move_copy_what = "subject-move/";
+            else if (currentValue == "Work") move_copy_what = "work-move/";
+            else move_copy_what = "person-move/";
+        } else {
+            movecopy = "Copied";
+            if (currentValue == "Subject") move_copy_what = "subject-copy/";
+            else if (currentValue == "Work") move_copy_what = "work-copy/";
+            else move_copy_what = "person-copy/";
+        }
+        d3.xhr(url + move_copy_what + node_to_move_copy)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
             .post(
@@ -817,8 +951,8 @@ function draw_tree(error, treeData) {
                     }
                 }
             );
-        console.log('Moved Node: ' + node_to_move + " Under: " + theparent);
-        return true;
+        console.log(movecopy + ' Node: ' + node_to_move_copy + " Under: " + theparent);
+        return movecopy;
     }
 
     function initiateDrag(d, domNode) {
@@ -930,29 +1064,56 @@ function draw_tree(error, treeData) {
             }
             domNode = this;
             if (selectedNode) {
-                // console.log("dragging Node:", draggingNode.id);
-                // console.log("selectedNode:", selectedNode.id)
-                if (movenode(draggingNode.id, selectedNode.id) == true) {
+                response = move_copy_node(draggingNode.id, selectedNode.id);
+                if (response == 'Moved') {
                     // now remove the element from the parent, and insert it into the new elements children
                     var index = draggingNode.parent.children.indexOf(draggingNode);
                     if (index > -1) {
                         draggingNode.parent.children.splice(index, 1);
                     }
-                    if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
-                        if (typeof selectedNode.children !== 'undefined') {
-                            selectedNode.children.push(draggingNode);
-                        } else {
-                            selectedNode._children.push(draggingNode);
-                        }
-                    } else {
+                    if ((selectedNode.children == null) &&
+                        (selectedNode._children == null)) {
                         selectedNode.children = [];
                         selectedNode.children.push(draggingNode);
+                    } else {
+                        if (selectedNode._children == null)
+                            selectedNode.children.push(draggingNode);
+                        else
+                            selectedNode._children.push(draggingNode);
                     }
                     // Make sure that the node being added to is expanded so user can see added node is correctly moved
                     expand(selectedNode);
                     sortTree();
                     endDrag();
-                } else endDrag();
+                } else if (response == 'Copied') {
+                    // var index = draggingNode.parent.children.indexOf(draggingNode);
+                    // if (index > -1) {
+                    // draggingNode.parent.children.splice(index, 1);
+                    // }
+                    // console.log(draggingNode);
+                    if ((selectedNode.children == null) &&
+                        (selectedNode._children == null)) {
+                        selectedNode.children = [];
+                        if (draggingNode.children == null)
+                            draggingNode._children.forEach(function(item) { selectedNode.children.push(item); });
+                        else draggingNode.children.forEach(function(item) { selectedNode.children.push(item); });
+                    } else {
+                        if (selectedNode._children == null) {
+                            if (draggingNode.children == null)
+                                draggingNode._children.forEach(function(item) { selectedNode.children.push(item); });
+                            else draggingNode.children.forEach(function(item) { selectedNode.children.push(item); });
+                        } else {
+                            if (draggingNode.children == null)
+                                draggingNode._children.forEach(function(item) { selectedNode.children.push(item); });
+                            else draggingNode.children.forEach(function(item) { selectedNode.children.push(item); });
+                        }
+                    }
+                    // Make sure that the node being added to is expanded so user can see added node is correctly moved
+                    expand(selectedNode);
+                    // expand(draggingNode);
+                    sortTree();
+                    endDrag();
+                }
             } else {
                 endDrag();
             }

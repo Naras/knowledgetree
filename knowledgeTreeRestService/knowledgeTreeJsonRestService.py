@@ -5,6 +5,8 @@ import json, ast, logging, peewee, flask_httpauth
 import networkx as nx
 from networkx.readwrite import json_graph
 import random, string
+from datetime import datetime
+import copy
 
 auth = flask_httpauth.HTTPBasicAuth()
 def ceasar(plain,shift):  # shift each letter by shift
@@ -173,7 +175,46 @@ def refreshFromdb():
     subjectsJson = entity_json_dict_list(subjects)
     srs = ktm.SubjectRelatestoSubject.select()
     srsJson = entity_json_dict_list(srs)
-
+def copy_subject(id,target):  # copy a source to a target parent
+    row_subject = find_item_json_dict_list(subjectsJson,'id',id)
+    if row_subject is None: return None
+    row_srs = find_item_json_dict_list(srsJson,'subject2',id)
+    if row_srs is None: return None
+    newsubject = copy.copy(row_subject)
+    newsubject['id'] = (id  + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+    try:
+        ktm.Subject.create(id=newsubject['id'], name=newsubject['name'], description=newsubject['description'])  # db create row
+        subjectsJson.append(newsubject)
+    except peewee.IntegrityError:
+        logging.error(auth.username() + 'Failed to create new copy of subject:', row_subject['id'] + '-' + row_subject['name'])
+    return create_relation(target,newsubject['id'],row_srs['relation'],row_srs['sortorder'])
+def copy_children(id,target):
+    children = []
+    for item in srsJson:
+        if item['subject1'] == id: children.append(item)
+    for child in children:
+        result = copy_subject(child['subject2'], target)
+        copy_children(child['subject2'],target)
+    return children
+def delete_children(id):
+    children = []
+    for item in srsJson:
+        if item['subject1'] == id:
+            children.append(item)
+    for child in children: delete_children(child['subject2'])
+    relations = find_relations(id)
+    for subject_with_relation in relations:
+        subject1 = subject_with_relation['related']
+        relation = subject_with_relation['relation']
+        delete_relation(subject1, id, relation)  # each relation with another subject1 removed
+    for subj_index in range(len(subjectsJson)):  # remove subject from db & Json list
+        subj_as_dict = subjectsJson[subj_index]  # ast.literal_eval(subjectsJson[subj_index])
+        if subj_as_dict['id'] == id or subj_as_dict[u'id'] == id:
+            subjdbrow = ktm.Subject.get(ktm.Subject.id == subj_as_dict['id'])  # db get/delete row
+            subjdbrow.delete_instance()
+            del subjectsJson[subj_index]
+            break
+    return True
 def work_find_relation(work1,work2):
     for dict in wrwJson:
         # dict = item #ast.literal_eval(item)
@@ -376,6 +417,46 @@ def work_subject_add_relation(td):
         if not (dict == None):
             if 'relation' in dict: elem['relation'] = dict['relation']
     return td
+def copy_work(id,target):  # copy a source to a target parent
+    row_work = find_item_json_dict_list(worksJson,'id',id)
+    if row_work is None: return None
+    row_wrw = find_item_json_dict_list(wrwJson,'work2',id)
+    if row_wrw is None: return None
+    newwork = copy.copy(row_work)
+    newwork['id'] = (id  + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
+    try:
+        ktm.Work.create(id=newwork['id'], name=newwork['name'], description=newwork['description'])  # db create row
+        worksJson.append(newwork)
+    except peewee.IntegrityError:
+        logging.error(auth.username() + 'Failed to create new copy of work:', row_work['id'] + '-' + row_work['name'])
+    return work_create_relation(target,newwork['id'],row_wrw['relation'],row_wrw['sortorder'])
+def work_copy_children(id,target):
+    children = []
+    for item in wrwJson:
+        if item['work1'] == id: children.append(item)
+    for child in children:
+        copy_work(child['work2'], target)
+        work_copy_children(child['work2'],target)
+    return children
+def work_delete_children(id):
+    children = []
+    for item in wrwJson:
+        if item['work1'] == id:
+            children.append(item)
+    for child in children: work_delete_children(child['work2'])
+    relations = work_find_relations(id)
+    for work_with_relation in relations:
+        work1 = work_with_relation['related']
+        relation = work_with_relation['relation']
+        work_delete_relation(work1, id, relation)  # each relation with another work1 removed
+    for work_index in range(len(worksJson)):  # remove subject from db & Json list
+        work_as_dict = worksJson[work_index]  # ast.literal_eval(subjectsJson[subj_index])
+        if work_as_dict['id'] == id or work_as_dict[u'id'] == id:
+            workdbrow = ktm.Work.get(ktm.Work.id == work_as_dict['id'])  # db get/delete row
+            workdbrow.delete_instance()
+            del worksJson[work_index]
+            break
+    return True
 
 def person_find_relation(person1,person2):
     for dict in prpJson:
@@ -405,7 +486,7 @@ def person_create_relation(person1,person2,relation):
             prpJson.append(dict)
         except peewee.IntegrityError:
             ktm.database.rollback()
-            print('Failed to create person relation:', dict)
+            logging.error(auth.username() + 'Failed to create person relation:' + str(dict))
             return False
     return True
 def person_update_relation(person2,relation=None):
@@ -421,7 +502,7 @@ def person_update_relation(person2,relation=None):
             if relation is not None:prpNew.relation = relation
             prpNew.save()
         except peewee.IntegrityError:
-            print('Failed to update person relation:', dict)
+            logging.error(auth.username() + 'Failed to update person relation:' + str(dict))
             return False
     return True
 def person_replace_relation(person1,person2,relation=None):
@@ -448,7 +529,7 @@ def person_delete_relation(person1,person2,relation):
             prp.delete_instance()
             return True
         except:
-            print('Failed to delete person relation:')  #, dict
+            logging.error(auth.username() + 'Failed to delete person relation:')  #, dict
             return False
 def person_refreshGraph():
     g = nx.Graph()
@@ -514,7 +595,7 @@ def person_work_create_relation(person,work,relation):
             ktm.PersonHasWork.create(person=person,work=work,relation=relation)
             return True
         except peewee.IntegrityError:
-                print('Failed to create person-work relation:', dict)
+                logging.error(auth.username() + 'Failed to create person-work relation:' + str(dict))
                 return False
 def person_work_delete_relation(person,work,relation):
     found = False
@@ -536,7 +617,7 @@ def person_work_delete_relation(person,work,relation):
             qry.execute()
             return True
         except:
-            print 'Failed to delete person-work relation:'+ person + '-' + work + '-' + relation  #, dict
+            logging.error(auth.username() + 'Failed to delete person-work relation:'+ person + '-' + work + '-' + relation)  #, dict
             return False
 def person_work_refreshFromdb():
     # logging.debug('refresh subject-to=worksfrom db')
@@ -708,13 +789,15 @@ def create_subject_with_relation():
         if 'sortorder' in request.json: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
         else: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation']}
         subject2 = dict['subject']
-        if not 'id' in subject2 or not 'name' in subject2:
+        if not 'id' in subject2 or not 'name' in subject2 or subject2['id'] == ''  or subject2['name'] == '':
             logging.error('incorrect request:' + str(subject2))
-            abort(401)
+            abort(400)
         subject1id = dict['related']
-        if dict.has_key('relation'): relation = dict['relation']
+        if 'relation' in dict: relation = dict['relation']
         else: relation = None
-        if dict.has_key('sortorder'): sortorder = int(dict['sortorder'])
+        if 'sortorder' in dict:
+            sortorder = dict['sortorder']
+            if sortorder=='': sortorder = None
         else: sortorder = None
         if find_item_json_dict_list(subjectsJson,'id',subject1id) is None:  # no subject1
             return None
@@ -727,12 +810,11 @@ def create_subject_with_relation():
             ktm.Subject.create(id=subject2['id'],name=subject2['name'],description=subject2['description'])  # db create row
             subjectsJson.append(subject2)
             response = create_relation(subject1id,subject2['id'],relation=relation,sortorder=sortorder)
+            return jsonify({'subject': response})
         except peewee.IntegrityError:
             ktm.database.rollback()
             logging.error(auth.username() + 'Failed to create subject:'+ str(subject2))
-            response = False
-        finally:
-            return jsonify({'subject': response})
+            return jsonify({'subject': False})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject', methods=['POST'])
 @auth.login_required
@@ -841,7 +923,7 @@ def delete_subject_to_subject():
 @auth.login_required
 def move_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-subject move relation')
+        logging.debug(auth.username() + ':servicing subject-to-subject move subject')
         if not request.json or not 'id' in request.json:
             logging.error('JSON POST incorrect request:' + str(request.json))
             abort(400)
@@ -851,6 +933,24 @@ def move_subject(sub_id):
         else:
             return jsonify({'result': move_relation(sub_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'subject-copy/<string:sub_id>', methods=['POST'])
+@auth.login_required
+def copy_subtree(sub_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing subject copy subtree:' + sub_id + ' to '+ str(request.json['id']))
+        if not request.json or not 'id' in request.json:
+            logging.error('JSON POST incorrect request:' + str(request.json))
+            abort(400)
+        return jsonify({'result': copy_children(sub_id,request.json['id'])})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'subtree/<string:sub_id>', methods=['DELETE'])
+@auth.login_required
+def remove_subtree(sub_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing remove subtree ' + sub_id)
+        return jsonify({'result': delete_children(sub_id)})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+
 @app.route(endpoint_prefix + 'shutdown', methods=['POST'])
 @auth.login_required
 def shutdown():
@@ -925,15 +1025,16 @@ def create_work_with_relation():
         if 'sortorder' in request.json: dict = {"work": request.json['work'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
         else: dict = {"work": request.json['work'], "related": request.json['related'], "relation": request.json['relation']}
         work2 = dict['work']
-        if not 'id' in work2 or not 'name' in work2:
+        if not 'id' in work2 or not 'name' in work2 or work2['id'] == ''  or work2['name'] == '':
             logging.error('incorrect request:' + str(work2))
-            abort(401)
+            abort(400)
         work1id = dict['related']
-        if dict.has_key('relation'): relation = dict['relation']
+        if 'relation' in dict: relation = dict['relation']
         else: relation = None
-        if dict.has_key('sortorder'): sortorder = int(dict['sortorder'])
+        if 'sortorder' in dict:
+            sortorder = dict['sortorder']
+            if sortorder=='': sortorder = None
         else: sortorder = None
-        logging.debug(auth.username() + ":work-create-relation:find")
         if find_item_json_dict_list(worksJson,'id',work1id) is None:  # no work1
             return None
         if find_item_json_dict_list(worksJson,'id',work2['id']) is not None:
@@ -945,12 +1046,11 @@ def create_work_with_relation():
             ktm.Work.create(id=work2['id'],name=work2['name'],description=work2['description'])  # db create row
             worksJson.append(work2)
             response = work_create_relation(work1id,work2['id'],relation=relation,sortorder=sortorder)
+            return jsonify({'work': response})
         except peewee.IntegrityError:
             ktm.database.rollback()
             logging.error(auth.username() + ':Failed to create work:'+ str(work2))
-            response = False
-        finally:
-            return jsonify({'work': response})
+            return jsonify({'work': False})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'work', methods=['POST'])
 @auth.login_required
@@ -1069,6 +1169,23 @@ def move_work(wrk_id):
         else:
             return jsonify({'result': work_move_relation(wrk_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'work-copy/<string:wrk_id>', methods=['POST'])
+@auth.login_required
+def work_copy_subtree(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing work copy subtree:' + wrk_id + ' to '+ str(request.json['id']))
+        if not request.json or not 'id' in request.json:
+            logging.error('JSON POST incorrect request:' + str(request.json))
+            abort(400)
+        return jsonify({'result': work_copy_children(wrk_id,request.json['id'])})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
+@app.route(endpoint_prefix + 'subtree-work/<string:wrk_id>', methods=['DELETE'])
+@auth.login_required
+def work_remove_subtree(wrk_id):
+    if get_role(auth.username())in ['editor','admin']:
+        logging.debug(auth.username() + ':servicing remove subtree ' + wrk_id)
+        return jsonify({'result': work_delete_children(wrk_id)})
+    else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 
 #------------------------------------ subject-work related selects -----------------------
 #  --------------------  all features allowed for normal users(view works and relations) below -----------------------------
@@ -1174,15 +1291,15 @@ def get_subtree_person(prs_id):
 @auth.login_required
 def create_person_with_relation():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create person with relation:'+str(request.json))
+        logging.debug(auth.username() + ':servicing create person with relation:')
         if not request.json or not 'person' in request.json or not 'related' in request.json or not 'relation' in request.json:
             logging.error('incorrect request:' + str(request.json))
             abort(400)
         dict = {"person": request.json['person'], "related": request.json['related'], "relation": request.json['relation']}
         person2 = dict['person']
-        if not 'id' in person2:
+        if not 'id' in person2 or person2['id'] == '':
             logging.error('incorrect request:' + str(person2))
-            abort(401)
+            abort(400)
         person1id = dict['related']
         if dict.has_key('relation'): relation = dict['relation']
         else: relation = None
@@ -1215,6 +1332,13 @@ def create_person_with_relation():
         else: death = None
         if 'biography' in person2: biography = person2['biography']
         else: biography = None
+        if living == '1':
+            death = None
+        else:
+            if datetime.strptime(death, '%Y-%m-%d') < datetime.strptime(birth, '%Y-%m-%d'):
+            # if person['death'] < person['birth']:
+                logging.error('death:' + str(death) + ' before birth:' + str(birth) + '.. set to birth date')
+                death = birth
         try:
             ktm.Person.create(id=person2['id'],first=first,last=last,middle=middle,nick=nick,other=other,initials=initials, \
                               living=living,birth=birth,death=death,biography=biography)  # db create row
@@ -1239,6 +1363,13 @@ def create_person():
                   "nick": request.json.get('nick', ""), "initials": request.json.get('initials', ""), "other": request.json.get('other', ""), \
                   "living": request.json.get('living', ""), "birth": request.json.get('birth', ""), "death": request.json.get('death', ""), \
                   "biography": request.json.get('biography', "")}
+        if person['living'] == '1':
+            person['death'] = None
+        else:
+            if datetime.strptime(person['death'], '%Y-%m-%d') < datetime.strptime(person['birth'], '%Y-%m-%d'):
+            # if person['death'] < person['birth']:
+                logging.error('death:' + str(person['death']) + ' before birth:' + str(person['birth']) + '.. set to birth date')
+                person['death'] = person['birth']
         if find_item_json_dict_list(personsJson,'id',str(request.json['id'])) is not None:
             # subj = ast.literal_eval(str(sub))
             # generate a random string and concatenate - changes id to unique 20-char string
@@ -1290,7 +1421,12 @@ def update_person(prs_id):
                 personx.other = dict['other']
                 personx.living = dict['living']
                 personx.birth = dict['birth']
-                personx.death = dict['death']
+                if personx.living == '1': personx.death = None
+                else:
+                    personx.death = dict['death']
+                    if personx.death < personx.birth:
+                        logging.error('death:' + str(personx.death) + ' before birth:' + str(personx.birth) + '.. set to birth date' )
+                        personx.death = personx.birth
                 personx.biography = dict['biography']
                 personx.save()
                 if 'relation' in request.json:  # modify person_to_person if any change to relation or sort order
