@@ -26,24 +26,24 @@ def get_role(username):
     return None
 def restGet(url):
     completeUrl = prefix + url
-    print 'Retrieving:',  completeUrl
+    print ('Retrieving:',  completeUrl)
     response = requests.get(completeUrl,auth=('pankaja',get_password('pankaja')))
     return response
 def restPost(url,data):
     completeUrl = prefix + url
-    print 'Posting:',  completeUrl
+    print ('Posting:',  completeUrl)
     return requests.post(completeUrl, json = data, auth=('pankaja',get_password('pankaja')))
 def restPut(url,data):
     completeUrl = prefix + url
-    print 'Putting:',  completeUrl
+    print ('Putting:',  completeUrl)
     return requests.put(completeUrl, json = data, auth=('pankaja',get_password('pankaja')))
 def restDelete(url):
     completeUrl = prefix + url
-    print 'Deleting:',  completeUrl
+    print ('Deleting:',  completeUrl)
     return requests.delete(completeUrl,auth=('pankaja',get_password('pankaja'))) #  headers = {'Content-type': 'application/json'})
 def restDeletewithData(url,data):
     completeUrl = prefix + url
-    print 'Deleting:',  completeUrl
+    print ('Deleting:',  completeUrl)
     return requests.delete(completeUrl, json = data, auth=('pankaja',get_password('pankaja')))
 class TestUM(unittest.TestCase):
     def setUp(self):
@@ -61,7 +61,7 @@ class TestUM(unittest.TestCase):
             self.assertEqual(response.status_code,200)
     def test_create_subjects(self):
         # ----------------create a sample subject--------------------------
-        response =  restPost('subject',{'id': 'idtest','name': 'name-test','description': 'description-test-ಕನ್ನಡ'})
+        response =  restPost('subject',{'id': 'idtest','name': 'name-test','description': 'description-test'})
         self.assertEqual(response.status_code,201)
         self.assertIn('idtest',response.text)
         # ----------------create a duplicate of the subject--------------------------
@@ -94,23 +94,20 @@ class TestUM(unittest.TestCase):
         # ----------------get the parent subject------------------
         response=restGet('subject/idtestParent')
         self.assertEqual(response.status_code,200)
-        self.assertEqual( \
-        '{"subject":{"description":"description-test-parent","id":"idtestParent","name":"name-test-parent"}}', \
+        self.assertEqual('{"subject":{"description":"description-test-parent","id":"idtestParent","name":"name-test-parent"}}', \
             response.text.replace('\n','').replace(' ',''))
         # print 'status:', response.status_code, '\n',response.text.replace('\n','').replace(' ','')
 
         # -----------------get the child subject-----------------
         response=restGet('subject/idtestChild')
         self.assertEqual(response.status_code,200)
-        self.assertEqual( \
-        '{"subject":{"description":"description-test-child","id":"idtestChild","name":"name-test-child"}}', \
+        self.assertEqual('{"subject":{"description":"description-test-child","id":"idtestChild","name":"name-test-child"}}', \
             response.text.replace('\n','').replace(' ','').replace(' ',''))
         response=restGet('subject-to-subject')
         # print response.text.replace('\n','').replace(' ','')
 
         # ------------------check the parent-child relation------------------
-        self.assertIn( \
-        '{"relation":"Anga","sortorder":65,"subject1":"idtestParent","subject2":"idtestChild"}', \
+        self.assertIn('{"relation":"Anga","sortorder":65,"subject1":"idtestParent","subject2":"idtestChild"}', \
             response.text.replace('\n','').replace(' ',''))
 
         # ----------------create a new target subject--------------------------
@@ -169,7 +166,9 @@ class TestUM(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         response = restDelete('subtree/idtestTarget')
         self.assertEqual(response.status_code,200)
-
+        for id in ['idtestChild1','idtestChild2','idtestChild3']:
+            response = restDelete('subject-with-relation/' + id)
+            self.assertEqual(response.status_code,200)
     def test_works(self):
         get_services = ['works','work-to-work','work-work-relations']
         for service in get_services:
@@ -281,10 +280,13 @@ class TestUM(unittest.TestCase):
         # ----------------------remove the sample work-------------------
         response = restDelete('work/idtest')
         self.assertEqual(response.status_code,200)
-        response = restDelete('subtree/idtestSource')
+        response = restDelete('subtree-work/idtestSource')
         self.assertEqual(response.status_code,200)
-        response = restDelete('subtree/idtestTarget')
+        response = restDelete('subtree-work/idtestTarget')
         self.assertEqual(response.status_code,200)
+        for id in ['idtestChild1','idtestChild2','idtestChild3']:
+            response = restDelete('work-with-relation/' + id)
+            self.assertEqual(response.status_code,200)
 
     def test_subject_to_work(self):
         get_services = ['subject-work-relations','subject-to-work']
@@ -312,27 +314,29 @@ class TestUM(unittest.TestCase):
             self.assertEqual(response.status_code,200)
             self.assertIn('"result": true',response.text)
         # ----------------get subject-to-work tree--------------------------
-        gsub = restGet('tree-subject-work/idtest_subject1')
-        json.dump(gsub.content, open('jsondata/knowledgeTree-subject-work-tree.json','w'))
+        # gsub = restGet('tree-subject-work/idtest_subject1')
+        # json.dump(gsub.content, open('jsondata/knowledgeTree-subject-work-tree.json','w'))
         # ----------------get work-to-subject tree--------------------------
-        gwrk = restGet('tree-work-subject/idtest_work4')
-        json.dump(gwrk.content, open('jsondata/knowledgeTree-work-subject-tree.json','w'))
+        # gwrk = restGet('tree-work-subject/idtest_work4')
+        # json.dump(gwrk.content, open('jsondata/knowledgeTree-work-subject-tree.json','w'))
         # ----------------remove all subject work relations created--------------------------
-        for work in {'idtest_work1','idtest_work2','idtest_work3'}:
-            response =  restDeletewithData('subject-to-work',{'subject': 'idtest_subject1','work': work,'relation': 'pramaana_prameya'})
-            self.assertEqual(response.status_code,200)
-            self.assertIn('"result": true',response.text)
-        for subject in {'idtest_subject2','idtest_subject3','idtest_subject4'}:
-            response =  restDeletewithData('subject-to-work',{'subject': subject,'work': 'idtest_work4','relation': 'pramaana_prameya'})
-            self.assertEqual(response.status_code,200)
-            self.assertIn('"result": true',response.text)
+        # for work in {'idtest_work1','idtest_work2','idtest_work3'}:
+        #     response =  restDeletewithData('subject-to-work',{'subject': 'idtest_subject1','work': work,'relation': 'pramaana_prameya'})
+        #     self.assertEqual(response.status_code,200)
+        #     self.assertIn('"result": true',response.text)
+        # for subject in {'idtest_subject2','idtest_subject3','idtest_subject4'}:
+        #     response =  restDeletewithData('subject-to-work',{'subject': subject,'work': 'idtest_work4','relation': 'pramaana_prameya'})
+        #     self.assertEqual(response.status_code,200)
+        #     self.assertIn('"result": true',response.text)
         # remove the subjects created
         for subject in {'idtest_subject1','idtest_subject2','idtest_subject3','idtest_subject4'}:
-            response = restDelete('subject/' + subject)
+            # response = restDelete('subject/' + subject)
+            response = restDelete('subtree/' + subject)
             self.assertEqual(response.status_code,200)
         # remove the works created
         for work in {'idtest_work1','idtest_work2','idtest_work3','idtest_work4'}:
-            response = restDelete('work/' + work)
+            # response = restDelete('work/' + work)
+            response = restDelete('subtree-work/' + work)
             self.assertEqual(response.status_code,200)
 
     def test_persons(self):
@@ -344,7 +348,7 @@ class TestUM(unittest.TestCase):
     def test_create_persons(self):
         # ----------------create a sample person--------------------------
         response =  restPost('person',{"id": "idtest", "first": "first", "last": "last","middle": "middle",   \
-                                  "initials": "ini", "nick":"nick", "other":"other", "living":1,"birth":"1955-01-01", \
+                                  "initials": "ini", "nick":"nick", "other":"other", "living":"1","birth":"1955-01-01", \
                                   "biography":"this was a great life, still not dead"})
         self.assertEqual(response.status_code,201)
         self.assertIn('"id": "idtest"',response.text)
@@ -353,7 +357,7 @@ class TestUM(unittest.TestCase):
         self.assertIn('"last": "last"',response.text)
         self.assertIn('"nick": "nick"',response.text)
         self.assertIn('"other": "other"',response.text)
-        self.assertIn('"living": 1',response.text)
+        self.assertIn('"living": "1"',response.text)
         self.assertIn('"birth": "1955-01-01"',response.text)
         self.assertIn('"biography": "this was a great life, still not dead"',response.text)
         # ----------------create a duplicate of the person--------------------------
@@ -478,11 +482,11 @@ class TestUM(unittest.TestCase):
             self.assertEqual(response.status_code,200)
             self.assertIn('"result": true',response.text)
         # ----------------get person-to-work tree--------------------------
-        gpers = restGet('tree-person-work/idtest_person1')
-        json.dump(gpers.content, open('jsondata/knowledgeTree-person-work-tree.json','w'))
-        # ----------------get work-to-person tree--------------------------
-        gwrk = restGet('tree-work-person/idtest_work4')
-        json.dump(gwrk.content, open('jsondata/knowledgeTree-work-person-tree.json','w'))
+        # gpers = restGet('tree-person-work/idtest_person1')
+        # json.dump(gpers.content, open('jsondata/knowledgeTree-person-work-tree.json','w'))
+        # # ----------------get work-to-person tree--------------------------
+        # gwrk = restGet('tree-work-person/idtest_work4')
+        # json.dump(gwrk.content, open('jsondata/knowledgeTree-work-person-tree.json','w'))
         # ----------------remove all person work relations created--------------------------
         for work in {'idtest_work1','idtest_work2','idtest_work3'}:
             response =  restDeletewithData('person-to-work',{'person': 'idtest_person1','work': work,'relation': 'pramaana_pramatha'})
@@ -500,6 +504,7 @@ class TestUM(unittest.TestCase):
         for work in {'idtest_work1','idtest_work2','idtest_work3','idtest_work4'}:
             response = restDelete('work/' + work)
             self.assertEqual(response.status_code,200)
+
 
 if __name__ == '__main__':
     unittest.main()

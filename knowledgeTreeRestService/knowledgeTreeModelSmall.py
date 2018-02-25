@@ -17,7 +17,8 @@ def get_password():
 def get_dbhost():
     try:
         # socket.gethostbyname(socket.gethostname())
-        hosturl = file('database_url.txt').read()
+        hosturlfile = open('database_url.txt')
+        hosturl =    hosturlfile.read()
         return hosturl
     except:
         return None
