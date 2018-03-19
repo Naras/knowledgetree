@@ -478,7 +478,28 @@ function draw_tree(error, treeData) {
             return [d.y, d.x];
         });
 
-    var menu = [{
+    var menu = [{            title: 'View parent',
+    action: function(elm, d, i) {
+        var thekey;   
+        if (d.parent!=="undefined") {
+            if (currentValue == "Subject") thekey=d.parent.subject1;
+            else if (currentValue == "Work") thekey=d.parent.work1;
+            else thekey=d.parent.person1;
+            if (typeof thekey=="undefined") thekey=d.parent.id;
+        var auth = getauth();
+        if (currentValue == "Subject") subtree = "subtree/";
+        else if (currentValue == "Work") subtree = "subtree-work/";
+        else subtree = "subtree-person/";
+        d3.json(url + subtree + thekey).header("Authorization", "Basic " + btoa(auth)).get(function(err, content) {
+            if (err) console.log("error:", err);
+            else {
+                svgElement = $("#tree-container").children().first();
+                svgElement.remove();
+                draw_tree(err, content);
+            }
+        });
+    }}
+},{
             title: 'View node',
             action: function(elm, d, i) {
                 if (currentValue == "Subject" || currentValue == "Work") {
@@ -788,11 +809,15 @@ function draw_tree(error, treeData) {
 
 
     function delete_node(node) {
-        // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
         var auth = getauth();
         if (currentValue == "Subject") with_relations = "subject-with-relation/";
         else if (currentValue == "Work") with_relations = "work-with-relation/";
         else with_relations = "person-with-relation/";
+        if (node.children || node._children) {
+            alert("node has children, please use Remove Subtree!");
+            return "Cancelled";}
+        strconfirm = confirm("Are you sure you want to remove " + node.id);
+        if (strconfirm == false) return 'Cancelled';
         d3.xhr(url + with_relations + node.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))
@@ -829,6 +854,11 @@ function draw_tree(error, treeData) {
         if (currentValue == "Subject") subtree = "subtree/";
         else if (currentValue == "Work") subtree = "subtree-work/";
         else subtree = "subtree-person/";
+        if (!(node.children || node._children)) {
+            alert("node does not have children, please use Remove Node!");
+            return "Cancelled";}
+        strconfirm = confirm("Are you sure you want to remove subtree " + node.id);
+        if (strconfirm == false) return 'Cancelled';
         d3.xhr(url + subtree + node.id)
             .header("Content-Type", "application/json")
             .header("Authorization", "Basic " + btoa(auth))

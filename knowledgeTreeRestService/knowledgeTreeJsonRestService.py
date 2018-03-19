@@ -145,6 +145,8 @@ def add_name_description(td):
     if not (dict == None):
         if 'name' in dict: td['name'] = dict['name']
         if 'description' in dict: td['description'] = dict['description']
+        parent = find_item_json_dict_list(srsJson,'subject2',td['id']);
+        if not (parent == None): td['parent'] = parent;
         rel = find_relations(dict['id'])
         if not (rel==[]):
             td['relation']=rel[0]['relation']
@@ -323,6 +325,8 @@ def work_add_name_description(td):
     if not (dict == None):
         if 'name' in dict: td['name'] = dict['name']
         if 'description' in dict: td['description'] = dict['description']
+        parent = find_item_json_dict_list(wrwJson,'work2',td['id']);
+        if not (parent == None): td['parent'] = parent;
         rel = work_find_relations(dict['id'])
         if not (rel==[]):
             td['relation']=rel[0]['relation']
@@ -585,6 +589,8 @@ def person_add_names(td):
         if 'birth' in dict: td['birth'] = dict['birth']
         if 'death' in dict: td['death'] = dict['death']
         if 'biography' in dict: td['biography'] = dict['biography']
+        parent = find_item_json_dict_list(prpJson,'person2',td['id']);
+        if not (parent == None): td['parent'] = parent;
         rel = person_find_relations(dict['id'])
         if not (rel==[]):
             td['relation']=rel[0]['relation']
@@ -806,7 +812,7 @@ def get_tree():
 @app.route(endpoint_prefix + 'subtree/<string:sub_id>', methods=['GET'])
 @auth.login_required
 def get_subtree(sub_id):
-    logging.debug(auth.username() + ':servicing JSON GET sub-tree')
+    logging.debug(auth.username() + ':servicing JSON GET sub-tree for <'+ sub_id + '>')
     refreshFromdb()
     return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),sub_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
@@ -1055,7 +1061,7 @@ def get_tree_work():
 @app.route(endpoint_prefix + 'subtree-work/<string:wrk_id>', methods=['GET'])
 @auth.login_required
 def get_subtree_work(wrk_id):
-    logging.debug(auth.username() + ':servicing JSON GET work sub-tree')
+    logging.debug(auth.username() + ':servicing JSON GET work sub-tree for <'+ wrk_id + '>')
     work_refreshFromdb()
     return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),wrk_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
@@ -1341,7 +1347,7 @@ def get_tree_person():
 @app.route(endpoint_prefix + 'subtree-person/<string:prs_id>', methods=['GET'])
 @auth.login_required
 def get_subtree_person(prs_id):
-    logging.debug(auth.username() + ':servicing JSON GET person sub-tree')
+    logging.debug(auth.username() + ':servicing JSON GET person sub-tree for <'+ prs_id + '>')
     person_refreshFromdb()
     return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),"all"),prs_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relations) below -----------------------------
