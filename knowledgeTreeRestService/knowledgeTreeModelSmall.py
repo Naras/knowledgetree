@@ -18,7 +18,8 @@ def get_dbhost():
     try:
         # socket.gethostbyname(socket.gethostname())
         hosturlfile = open('database_url.txt')
-        hosturl =    hosturlfile.read()
+        hosturl = hosturlfile.read()
+        hosturlfile.close()
         return hosturl
     except:
         return None
@@ -38,30 +39,13 @@ class BaseModel(Model):
     class Meta:
         database = database
 
-class Person(BaseModel):
-    biography = CharField(db_column='Biography', null=True)
-    birth = DateField(db_column='Birth', null=True)
-    death = DateField(db_column='Death', null=True)
-    first = CharField(db_column='First', null=True)
-    initials = CharField(db_column='Initials', null=True)
-    last = CharField(db_column='Last', null=True)
-    living = IntegerField(db_column='Living', null=True)
-    middle = CharField(db_column='Middle', null=True)
-    nick = CharField(db_column='Nick', null=True)
-    other = CharField(db_column='Other', null=True)
-    period = CharField(db_column='Period', null=True)
-    id = CharField(primary_key=True)
-
-    class Meta:
-        db_table = 'person'
-
 class Subject(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name')
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name')
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'subject'
+        table_name = 'subject'
 
 # class Orphan(BaseModel):
 #     description = CharField(db_column='Description', null=True)
@@ -72,113 +56,132 @@ class Subject(BaseModel):
 #         db_table = 'orphan'
 
 class SubjectSubjectRelation(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'subject_subject_relation'
+        table_name = 'subject_subject_relation'
 
 class SubjectRelatestoSubject(BaseModel):
-    relation = ForeignKeyField(db_column='Relation', null=True, rel_model=SubjectSubjectRelation, to_field='id')
-    sortorder = IntegerField(db_column='Sortorder', null=True)
-    subject1 = ForeignKeyField(db_column='Subject1', rel_model=Subject, to_field='id')
-    subject2 = ForeignKeyField(db_column='Subject2', rel_model=Subject, related_name='subject_subject2_set', to_field='id')
+    relation = ForeignKeyField(column_name='Relation', field='id', model=SubjectSubjectRelation, null=True)
+    sortorder = IntegerField(column_name='Sortorder', null=True)
+    subject1 = ForeignKeyField(column_name='Subject1', field='id', model=Subject)
+    subject2 = ForeignKeyField(backref='subject_subject2_set', column_name='Subject2', field='id', model=Subject)
 
     class Meta:
-        db_table = 'subject_relatesto_subject'
+        table_name = 'subject_relatesto_subject'
         indexes = (
             (('subject1', 'subject2'), True),
         )
         primary_key = CompositeKey('subject1', 'subject2')
 
 class Work(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'work'
+        table_name = 'work'
 
 class WorkWorkRelation(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'work_work_relation'
+        table_name = 'work_work_relation'
 
 class WorkRelatestoWork(BaseModel):
-    relation = ForeignKeyField(db_column='Relation', null=True, rel_model=WorkWorkRelation, to_field='id')
-    sortorder = IntegerField(db_column='Sortorder', null=True)
-    work1 = ForeignKeyField(db_column='Work1', rel_model=Work, to_field='id')
-    work2 = ForeignKeyField(db_column='Work2', rel_model=Work, related_name='work_work2_set', to_field='id')
+    relation = ForeignKeyField(column_name='Relation', field='id', model=WorkWorkRelation, null=True)
+    sortorder = IntegerField(column_name='Sortorder', null=True)
+    work1 = ForeignKeyField(column_name='Work1', field='id', model=Work)
+    work2 = ForeignKeyField(backref='work_work2_set', column_name='Work2', field='id', model=Work)
 
     class Meta:
-        db_table = 'work_relatesto_work'
+        table_name = 'work_relatesto_work'
         indexes = (
             (('work1', 'work2'), True),
         )
         primary_key = CompositeKey('work1', 'work2')
 
 class WorkSubjectRelation(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'work_subject_relation'
+        table_name = 'work_subject_relation'
 
 class SubjectHasWork(BaseModel):
-    relation = ForeignKeyField(db_column='Relation', rel_model=WorkSubjectRelation, to_field='id')
-    subject = ForeignKeyField(db_column='Subject', rel_model=Subject, to_field='id')
-    work = ForeignKeyField(db_column='Work', rel_model=Work, to_field='id')
+    relation = ForeignKeyField(column_name='Relation', field='id', model=WorkSubjectRelation)
+    subject = ForeignKeyField(column_name='Subject', field='id', model=Subject)
+    work = ForeignKeyField(column_name='Work', field='id', model=Work)
 
     class Meta:
-        db_table = 'subject_has_work'
+        table_name = 'subject_has_work'
         indexes = (
             (('subject', 'work', 'relation'), True),
         )
         primary_key = CompositeKey('relation', 'subject', 'work')
 
-class PersonWorkRelation(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+class Person(BaseModel):
+    biography = CharField(column_name='Biography', null=True)
+    birth = DateField(column_name='Birth', null=True)
+    death = DateField(column_name='Death', null=True)
+    first = CharField(column_name='First', null=True)
+    initials = CharField(column_name='Initials', null=True)
+    last = CharField(column_name='Last', null=True)
+    living = IntegerField(column_name='Living', constraints=[SQL("DEFAULT 1")], null=True)
+    middle = CharField(column_name='Middle', null=True)
+    nick = CharField(column_name='Nick', null=True)
+    other = CharField(column_name='Other', null=True)
+    period = CharField(column_name='Period', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'person_work_relation'
+        table_name = 'person'
 
-class PersonHasWork(BaseModel):
-    person = ForeignKeyField(db_column='Person', rel_model=Person, to_field='id')
-    relation = ForeignKeyField(db_column='Relation', rel_model=PersonWorkRelation, to_field='id')
-    work = ForeignKeyField(db_column='Work', rel_model=Work, to_field='id')
+class PersonWorkRelation(BaseModel):
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
+    id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'person_has_work'
+        table_name = 'person_work_relation'
+
+class PersonHasWork(BaseModel):
+    person = ForeignKeyField(column_name='Person', field='id', model=Person)
+    relation = ForeignKeyField(column_name='Relation', field='id', model=PersonWorkRelation)
+    work = ForeignKeyField(column_name='Work', field='id', model=Work)
+
+    class Meta:
+        table_name = 'person_has_work'
         indexes = (
             (('person', 'work', 'relation'), True),
         )
         primary_key = CompositeKey('person', 'relation', 'work')
 
 class PersonPersonRelation(BaseModel):
-    description = CharField(db_column='Description', null=True)
-    name = CharField(db_column='Name', null=True)
+    description = CharField(column_name='Description', null=True)
+    name = CharField(column_name='Name', null=True)
     id = CharField(primary_key=True)
 
     class Meta:
-        db_table = 'person_person_relation'
+        table_name = 'person_person_relation'
 
 class PersonRelatestoPerson(BaseModel):
-    person1 = ForeignKeyField(db_column='person1', rel_model=Person, to_field='id')
-    person2 = ForeignKeyField(db_column='person2', rel_model=Person, related_name='person_person2_set', to_field='id')
-    relation = ForeignKeyField(db_column='relation', rel_model=PersonPersonRelation, to_field='id')
+    person1 = ForeignKeyField(column_name='person1', field='id', model=Person)
+    person2 = ForeignKeyField(backref='person_person2_set', column_name='person2', field='id', model=Person)
+    relation = ForeignKeyField(column_name='relation', field='id', model=PersonPersonRelation)
 
     class Meta:
-        db_table = 'person_relatesto_person'
+        table_name = 'person_relatesto_person'
         indexes = (
             (('person1', 'person2', 'relation'), True),
         )
         primary_key = CompositeKey('person1', 'person2', 'relation')
+
+
 
 

@@ -7,6 +7,34 @@ from networkx.readwrite import json_graph
 import random, string
 from datetime import datetime
 import copy
+import cProfile #, pstats, io
+# from https://stackoverflow.com/questions/5375624/a-decorator-that-profiles-a-method-call-and-logs-the-profiling-result
+def profileit(name):
+    def inner(func):
+        def wrapper(*args, **kwargs):
+            prof = cProfile.Profile()
+            retval = prof.runcall(func, *args, **kwargs)
+            # Note use of name from outer scope
+            prof.dump_stats(name)
+            return retval
+        return wrapper
+    return inner
+# def profileit(name):  # this creates a text file output
+#     def inner(func):
+#         def wrapper(*args, **kwargs):
+#             prof = cProfile.Profile()
+#             retval = prof.runcall(func, *args, **kwargs)
+#             # Note use of name from outer scope
+#             prof.dump_stats(name)
+#             s = io.StringIO()
+#             sortby = 'cumulative'
+#             ps = pstats.Stats(prof, stream=s).sort_stats(sortby)
+#             ps.print_stats()
+#             with open(name, 'w') as perf_file:
+#                 perf_file.write(s.getvalue())
+#             return retval
+#         return wrapper
+#     return inner
 
 auth = flask_httpauth.HTTPBasicAuth()
 def ceasar(plain,shift):  # shift each letter by shift
@@ -116,10 +144,11 @@ def find_item_json_dict_list(lst,key,value):
         # print dic, type(dic)
         if dic[key] == value: return dic
     return None
+@profileit("entity_json_dict_list.prof")
 def entity_json_dict_list(rows):
     rowsJson = []
     for row in rows:
-        db_flds = row.__dict__['_data']  # get all the db field names/values .. a dictionary
+        db_flds = row.__dict__['__data__']  # get all the db field names/values .. a dictionary
         jsonElement = '{'
         for fld_name,fld_value in db_flds.items():
             if not fld_value is None:
@@ -160,6 +189,7 @@ def shutdown_server():
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
+@profileit("subject_refreshGraph.prof")
 def refreshGraph():
     g = nx.Graph()
     for row in subjectsJson:
@@ -171,6 +201,7 @@ def refreshGraph():
         g[row['subject1']][row['subject2']]['relation'] = row['relation']
         if 'sortorder' in row: g[row['subject1']][row['subject2']]['sortorder'] = row['sortorder']
     return g
+@profileit("subject_refreshFromDB.prof")
 def refreshFromdb():
     # logging.debug('refresh subjects and relations from db')
     subjects = ktm.Subject.select()
@@ -561,11 +592,11 @@ def person_refreshGraph():
     g = nx.Graph()
     for row in personsJson:
         g.add_node(row['id'])
-        # if 'first' in row: g.node[row['id']]['first'] = row['first']
-        # if 'last' in row: g.node[row['id']]['last'] = row['last']
-        # if 'middle' in row: g.node[row['id']]['middle'] = row['middle']
-        # if 'nick' in row: g.node[row['id']]['nick'] = row['nick']
-        # if 'other' in row: g.node[row['id']]['other'] = row['other']
+        # if 'first' in row: g.node_id[row['id']]['first'] = row['first']
+        # if 'last' in row: g.node_id[row['id']]['last'] = row['last']
+        # if 'middle' in row: g.node_id[row['id']]['middle'] = row['middle']
+        # if 'nick' in row: g.node_id[row['id']]['nick'] = row['nick']
+        # if 'other' in row: g.node_id[row['id']]['other'] = row['other']
     for row in prpJson:
         g.add_edge(row['person1'],row['person2'])
         g[row['person1']][row['person2']]['relation'] = row['relation']
@@ -795,7 +826,7 @@ def get_nodes_edges():
     refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(g) # node-link format to serialize
+    # d = json_graph.node_link_data(g) # node_id-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(refreshGraph()))
 @app.route(endpoint_prefix + 'tree', methods=['GET'])
@@ -1044,7 +1075,7 @@ def get_nodes_edges_work():
     work_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(g) # node-link format to serialize
+    # d = json_graph.node_link_data(g) # node_id-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(work_refreshGraph()))
 @app.route(endpoint_prefix + 'tree-work', methods=['GET'])
@@ -1330,7 +1361,7 @@ def get_nodes_edges_person():
     person_refreshFromdb()
     # gp = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(gp) # node-link format to serialize
+    # d = json_graph.node_link_data(gp) # node_id-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(person_refreshGraph()))
 @app.route(endpoint_prefix + 'tree-person', methods=['GET'])
@@ -1622,5 +1653,27 @@ def get_tree_work_to_person(work):
     person_work_refreshFromdb();
     return jsonify(work_person_add_relation(json_graph.tree_data(nx.bfs_tree(work_person_refreshGraph(work),work),work)))
 
+# summary totals
+@app.route(endpoint_prefix + 'counts', methods=['GET'])
+@auth.login_required
+def get_summary_counts():
+    return jsonify({"subjects":len(subjectsJson), "works":len(worksJson), "persons":len(persons), \
+      "subject-to-subject":len(srsJson), "work-to-work":len(wrwJson), \
+      "person-to-person":len(prpJson)})
+def countsBynode(nodeList,keyname):
+    count = {}
+    for node in nodeList:
+        if node[keyname] not in count: count[node[keyname]] = 1
+        else:
+            # print ('key: %s count: %d' (node_id[keyname],count[node_id[keyname]]))
+            count[node[keyname]] = count[node[keyname]] + 1
+    return count
+@app.route(endpoint_prefix + 'node_id-counts', methods=['GET'])
+@auth.login_required
+def get_node_counts():
+    subject_counts = countsBynode(srsJson,'subject1')
+    # work_counts = countsBynode(wrwJson,'work1')
+    person_counts = countsBynode(prpJson,'person1')
+    return jsonify(subject_counts)
 if __name__ == '__main__':
     app.run(debug=True)
