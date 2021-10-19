@@ -20,6 +20,7 @@ var allNodes = [];
 var with_relation = "subject-with-relation";
 var subject_work_or_person = "subject";
 var currentValue = "subject";
+var dragdropDisabled = true;
 
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -450,6 +451,9 @@ function copy_node() {
 outer_update = null;
 
 function draw_tree(error, treeData) {
+
+    dragdropDisabled = document.getElementById("dragdropDisabled").checked;
+    // console.log("drag/drop..", dragdropDisabled);
 
     // Calculate total nodes, max label length
     var totalNodes = 0;
@@ -1043,7 +1047,8 @@ function draw_tree(error, treeData) {
     // Define the drag listeners for drag/drop behaviour of nodes.
     dragListener = d3.behavior.drag()
         .on("dragstart", function(d) {
-            if (d == root) {
+            dragdropDisabled = document.getElementById("dragdropDisabled").checked;
+            if (d == root || dragdropDisabled) {
                 return;
             }
             dragStarted = true;
@@ -1089,7 +1094,7 @@ function draw_tree(error, treeData) {
             node.attr("transform", "translate(" + d.y0 + "," + d.x0 + ")");
             updateTempConnector();
         }).on("dragend", function(d) {
-            if (d == root) {
+            if (d == root || dragdropDisabled) {
                 return;
             }
             domNode = this;
@@ -1142,6 +1147,8 @@ function draw_tree(error, treeData) {
                     expand(selectedNode);
                     // expand(draggingNode);
                     sortTree();
+                    endDrag();
+                } else {
                     endDrag();
                 }
             } else {

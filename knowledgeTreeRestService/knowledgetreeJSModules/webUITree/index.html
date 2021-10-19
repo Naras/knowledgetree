@@ -68,6 +68,7 @@
               </label>
         <datalist id="SearchList">
                 </datalist>
+        <input type="checkbox" id="dragdropDisabled" name="dragdropDisabled" onclick="handledragdrop();" checked="checked">disable drag/drop
     </FORM>
     <!--<FORM NAME="url">
         <INPUT TYPE="button" NAME="restService" id="restServiceUrl">
@@ -533,6 +534,10 @@
                                 //     console.log("all promises fulfilled. Success!", response);
                                 // }
                             );
+                    }
+                
+                    function handledragdrop() {
+                        // console.log("drag/drop:", document.getElementById("dragdropDisabled").checked);
                     }
                 </script>
                 <script>

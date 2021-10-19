@@ -7,35 +7,6 @@ from networkx.readwrite import json_graph
 import random, string
 from datetime import datetime
 import copy
-import cProfile #, pstats, io
-# from https://stackoverflow.com/questions/5375624/a-decorator-that-profiles-a-method-call-and-logs-the-profiling-result
-def profileit(name):
-    def inner(func):
-        def wrapper(*args, **kwargs):
-            prof = cProfile.Profile()
-            retval = prof.runcall(func, *args, **kwargs)
-            # Note use of name from outer scope
-            prof.dump_stats(name)
-            return retval
-        return wrapper
-    return inner
-# def profileit(name):  # this creates a text file output
-#     def inner(func):
-#         def wrapper(*args, **kwargs):
-#             prof = cProfile.Profile()
-#             retval = prof.runcall(func, *args, **kwargs)
-#             # Note use of name from outer scope
-#             prof.dump_stats(name)
-#             s = io.StringIO()
-#             sortby = 'cumulative'
-#             ps = pstats.Stats(prof, stream=s).sort_stats(sortby)
-#             ps.print_stats()
-#             with open(name, 'w') as perf_file:
-#                 perf_file.write(s.getvalue())
-#             return retval
-#         return wrapper
-#     return inner
-
 auth = flask_httpauth.HTTPBasicAuth()
 def ceasar(plain,shift):  # shift each letter by shift
         return "".join([chr((ord(x)- start(x) + shift) % 26 + start(x)) for (x) in list(plain)])
@@ -46,7 +17,7 @@ def start(alphabet): # find distance between alphabet and 'a' or 'A'
 def get_password(username):
     auths = json.load(open("credentials_roles.txt"))
     if username in auths:
-        return ceasar(auths[username]["pw"],10);
+        return ceasar(auths[username]["pw"],10)
     return None
 def get_role(username):
     auths = json.load(open("credentials_roles.txt"))
@@ -72,15 +43,16 @@ def create_relation(subject1,subject2,relation,sortorder=None):
     else:
         try:
             dict = {'subject1':subject1,'subject2':subject2,'relation':relation,'sortorder':sortorder}
+            with ktm.database.atomic() as trans:
             srsNew = ktm.SubjectRelatestoSubject.create(subject1=subject1,subject2=subject2,relation=relation,sortorder=sortorder)
             srsJson.append(dict)
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ':Failed to create relation-', dict)
+            trans.rollback()
+            logging.error('%s:Failed to create relation-%s'%(auth.username(), dict))
             return False
     return True
 def update_relation(subject2,relation=None,sortorder=None):
-    subject1 = find_relations(subject2)   # a list of subject1s - usually only one expected
+    # subject1 = find_relations(subject2)   # a list of subject1s - usually only one expected
     subject1 = find_relations(subject2)[0]['related']   # a list of subject1s - usually only one expected
     if (find_item_json_dict_list(subjectsJson,'id',subject1) is None) or (find_item_json_dict_list(subjectsJson,'id',subject2) is None) \
             or (find_item_json_dict_list(ssrJson,'id',relation) is None):
@@ -94,7 +66,7 @@ def update_relation(subject2,relation=None,sortorder=None):
             if sortorder is not None:srsNew.sortorder = sortorder
             srsNew.save()
         except peewee.IntegrityError:
-            logging.error(auth.username() + ':Failed to update relation-'+ str(dict))
+            logging.error('%s:Failed to update relation - %s'%(auth.username(), dict))
             return False
     return True
 def delete_relation(subject1,subject2,relation):
@@ -114,8 +86,8 @@ def delete_relation(subject1,subject2,relation):
             srs = ktm.SubjectRelatestoSubject.get(subject1=subject1,subject2=subject2,relation=relation)
             srs.delete_instance()
             return True
-        except:
-            logging.error(auth.username() + ' :Failed to delete relation-'+ str(dict))
+        except Exception as e:
+            logging.error('%s :Failed to delete relation - %s exception %s' %(auth.username(), dict, e))
             return False
 def find_relation(subject1,subject2):
     for dict in srsJson:
@@ -144,7 +116,6 @@ def find_item_json_dict_list(lst,key,value):
         # print dic, type(dic)
         if dic[key] == value: return dic
     return None
-@profileit("entity_json_dict_list.prof")
 def entity_json_dict_list(rows):
     rowsJson = []
     for row in rows:
@@ -165,9 +136,12 @@ def entity_json_dict_list(rows):
         rowsJson.append(ast.literal_eval(elem))
     return rowsJson
 def move_relation(subject,newparent,newrelation=None,sortorder=None):  # moves a subject from one parent to another - the subtree moves
+    try:
     relations=find_relations(subject)
-    delete_relation(relations[0]['related'],subject,relations[0]['relation'])
+        if relations != None and relations[0] != None: delete_relation(relations[0]['related'],subject,relations[0]['relation'])
     if newrelation == None: newrelation = relations[0]['relation']
+    except Exception as e:
+        logging.error('%s :move subject - Failed to delete relation - %s exception %s'%(auth.username(), subject, e))
     return create_relation(newparent,subject,newrelation,sortorder)
 def add_name_description(td):
     dict = find_item_json_dict_list(subjectsJson,'id',td['id'])
@@ -189,7 +163,6 @@ def shutdown_server():
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
-@profileit("subject_refreshGraph.prof")
 def refreshGraph():
     g = nx.Graph()
     for row in subjectsJson:
@@ -201,7 +174,6 @@ def refreshGraph():
         g[row['subject1']][row['subject2']]['relation'] = row['relation']
         if 'sortorder' in row: g[row['subject1']][row['subject2']]['sortorder'] = row['sortorder']
     return g
-@profileit("subject_refreshFromDB.prof")
 def refreshFromdb():
     # logging.debug('refresh subjects and relations from db')
     subjects = ktm.Subject.select()
@@ -219,7 +191,7 @@ def copy_subject(id,target):  # copy a source to a target parent
         ktm.Subject.create(id=newsubject['id'], name=newsubject['name'], description=newsubject['description'])  # db create row
         subjectsJson.append(newsubject)
     except peewee.IntegrityError:
-        logging.error(auth.username() + ' :Failed to create new copy of subject-', row_subject['id'] + '-' + row_subject['name'])
+        logging.error('%s :Failed to create new copy of subject- %s %s'%(auth.username(), row_subject['id'], row_subject['name']))
     return create_relation(target,newsubject['id'],row_srs['relation'],row_srs['sortorder'])
 def copy_children(id,target):
     children = []
@@ -268,10 +240,6 @@ def work_find_relations(work):  # find all relations a subject has with another 
             relations.append(dictitem)
     return relations
 def work_create_relation(work1,work2,relation,sortorder=None):
-    # for item in wrwJson:
-    #     dict = ast.literal_eval(item)
-    #     if (dict['work1'] == work1) and (dict['work2'] == work2) and (dict['relations'] == relation): #duplicate relation
-    #       return False
     if (find_item_json_dict_list(worksJson,'id',work1) is None) or (find_item_json_dict_list(worksJson,'id',work2) is None) or (find_item_json_dict_list(wwrJson,'id',relation) is None):
         return False  # either of the works or relation not valid
     elif work_find_relation(work1,work2) is not None:  # works are already related
@@ -279,11 +247,12 @@ def work_create_relation(work1,work2,relation,sortorder=None):
     else:
         try:
             dict = {'work1':work1,'work2':work2,'relation':relation,'sortorder':sortorder}
+            with ktm.database.atomic() as trans:
             wrwNew = ktm.WorkRelatestoWork.create(work1=work1,work2=work2,relation=relation,sortorder=sortorder)
             wrwJson.append(dict)
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ' :Failed to create work relation-'+ str(dict))
+            trans.rollback()
+            logging.error('%s:Failed to create work relation-%s'%(auth.username(), dict))
             return False
     return True
 def work_update_relation(work2,relation=None,sortorder=None):
@@ -300,7 +269,7 @@ def work_update_relation(work2,relation=None,sortorder=None):
             if sortorder is not None:wrwNew.sortorder = sortorder
             wrwNew.save()
         except peewee.IntegrityError:
-            logging.error(auth.username() + ' :Failed to update work relation-' + str(dict))
+            logging.error('%s :Failed to update work relation - %s'%(auth.username(), dict))
             return False
     return True
 def work_replace_relation(work1,work2,relation=None,sortorder=None):
@@ -328,7 +297,7 @@ def work_delete_relation(work1,work2,relation):
             wrw.delete_instance()
             return True
         except:
-            logging.error(auth.username() + ' :Failed to delete work relation-' + str(dict))
+            logging.error('%s :Failed to delete work relation- %s'%(auth.username(), dict))
             return False
 def work_refreshGraph():
     g = nx.Graph()
@@ -367,9 +336,12 @@ def work_add_name_description(td):
                 child = work_add_name_description(child)
     return td
 def work_move_relation(work,newparent,newrelation=None,sortorder=None):  # moves a work from one parent to another - the subtree moves
+    try:
     relations=work_find_relations(work)
-    work_delete_relation(relations[0]['related'],work,relations[0]['relation'])
+        if relations != None and relations[0] != None: work_delete_relation(relations[0]['related'],work,relations[0]['relation'])
     if newrelation == None: newrelation = relations[0]['relation']
+    except Exception as e:
+        logging.error('%s :move work - Failed to delete relation - %s exception %s'%(auth.username(), work, e))
     return work_create_relation(newparent,work,newrelation,sortorder)
 
 def find_subject_work_relations(subject,work):
@@ -479,7 +451,7 @@ def copy_work(id,target):  # copy a source to a target parent
         ktm.Work.create(id=newwork['id'], name=newwork['name'], description=newwork['description'])  # db create row
         worksJson.append(newwork)
     except peewee.IntegrityError:
-        logging.error(auth.username() + ':Failed to create new copy of work-', row_work['id'] + '-' + row_work['name'])
+        logging.error('%s: Failed to create new copy of work - %s %s'%(auth.username(), row_work['id'], row_work['name']))
     return work_create_relation(target,newwork['id'],row_wrw['relation'],row_wrw['sortorder'])
 def work_copy_children(id,target):
     children = []
@@ -521,7 +493,7 @@ def person_find_relation(person1,person2):
         if (dict['person1'] == person1) and (dict['person2'] == person2):
           return dict['relation']
     return None
-def person_find_relations(person):  # find all relations a subject has with another subject
+def person_find_relations(person):  # find all relations a person has with another person
     relations = []
     for item in prpJson:
         dict = item #ast.literal_eval(item)
@@ -539,11 +511,12 @@ def person_create_relation(person1,person2,relation):
     else:
         try:
             dict = {'person1':person1,'person2':person2,'relation':relation}
+            with ktm.database.atomic() as trans:
             ktm.PersonRelatestoPerson.create(person1=person1,person2=person2,relation=relation)
             prpJson.append(dict)
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ':Failed to create person relation-' + str(dict))
+            trans.rollback()
+            logging.error('%s:Failed to create person relation-%s'%(auth.username(), dict))
             return False
     return True
 def person_update_relation(person2,relation=None):
@@ -559,7 +532,7 @@ def person_update_relation(person2,relation=None):
             if relation is not None:prpNew.relation = relation
             prpNew.save()
         except peewee.IntegrityError:
-            logging.error(auth.username() + ':Failed to update person relation-' + str(dict))
+            logging.error('%s:Failed to update person relation- %s'%(auth.username(), dict))
             return False
     return True
 def person_replace_relation(person1,person2,relation=None):
@@ -586,7 +559,7 @@ def person_delete_relation(person1,person2,relation):
             prp.delete_instance()
             return True
         except:
-            logging.error(auth.username() + ':Failed to delete person relation-')  #, dict
+            logging.error('%s:Failed to delete person relation-%s'%(auth.username(), prp.id))  #, dict
             return False
 def person_refreshGraph():
     g = nx.Graph()
@@ -630,9 +603,12 @@ def person_add_names(td):
                 child = person_add_names(child)
     return td
 def person_move_relation(person,newparent,newrelation=None):  # moves a person from one parent to another - the subtree moves
+    try:
     relations=person_find_relations(person)
-    person_delete_relation(relations[0]['related'],person,relations[0]['relation'])
+        if relations != None and relations[0] != None: person_delete_relation(relations[0]['related'],person,relations[0]['relation'])
     if newrelation == None: newrelation = relations[0]['relation']
+    except Exception as e:
+        logging.error('%s :move person - Failed to delete relation - %s exception %s'%(auth.username(), person, e))
     return person_create_relation(newparent,person,newrelation)
 
 def find_person_work_relations(person,work):
@@ -664,7 +640,7 @@ def person_work_create_relation(person,work,relation):
             ktm.PersonHasWork.create(person=person,work=work,relation=relation)
             return True
         except peewee.IntegrityError:
-                logging.error(auth.username() + ':Failed to create person-work relation-' + str(dict))
+                logging.error('%s:Failed to create person-work relation- %s'%(auth.username(), dict))
                 return False
 def person_work_delete_relation(person,work,relation):
     found = False
@@ -686,7 +662,7 @@ def person_work_delete_relation(person,work,relation):
             qry.execute()
             return True
         except:
-            logging.error(auth.username() + ' :Failed to delete person-work relation-'+ person + '-' + work + '-' + relation)  #, dict
+            logging.error('%s :Failed to delete person-work relation-'+ person + '-' + work + '- %s'%(auth.username(), relation))  #, dict
             return False
 def person_work_refreshFromdb():
     # logging.debug('refresh subject-to=worksfrom db')
@@ -797,42 +773,42 @@ def hello_world():
 @app.route(endpoint_prefix + 'subjects', methods=['GET'])
 @auth.login_required
 def get_subjects():
-    logging.debug(auth.username() + ':servicing JSON GET All subjects')
+    logging.debug('%s:servicing JSON GET All subjects'%auth.username())
     return jsonify({'subjects': subjectsJson})
 @app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['GET'])
 @auth.login_required
 def get_subject(sub_id):
     # sub = [sub for sub in subjectsJson if sub['id'] == str(sub_id)]
-    logging.debug(auth.username() + ':servicing JSON GET: ' + sub_id)
+    logging.debug('%s:servicing JSON GET: %s'%(auth.username(), sub_id))
     sub = find_item_json_dict_list(subjectsJson,'id',sub_id)
     if sub is None or len(sub) == 0:
-        logging.error(auth.username() + ':JSON GET id missing-' + sub_id)
+        logging.error('%s:JSON GET id missing- %s'%(auth.username(), sub_id))
         abort(404)
     return jsonify({'subject': sub})
 @app.route(endpoint_prefix + 'subject-subject-relations', methods=['GET'])
 @auth.login_required
 def get_subject_subject_relations():
-    logging.debug(auth.username() + ':servicing JSON GET All subject-subject-relations')
+    logging.debug('%s:servicing JSON GET All subject_subject_relations'%auth.username())
     return jsonify({'relations': ssrJson})
 @app.route(endpoint_prefix + 'subject-to-subject', methods=['GET'])
 @auth.login_required
 def get_subject_relates_subject():
-    logging.debug(auth.username() + ':servicing JSON GET All subject-relates-to-subject')
+    logging.debug('%s:servicing JSON GET All subject-relates-to-subject'%auth.username())
     return jsonify({'subject-to-subject': srsJson})
 @app.route(endpoint_prefix + 'nodes-edges', methods=['GET'])
 @auth.login_required
 def get_nodes_edges():
-    logging.debug(auth.username() + ':servicing JSON GET nodes & edges')
+    logging.debug('%s:servicing JSON GET nodes & edges'%auth.username())
     refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(g) # node_id-link format to serialize
+    # d = json_graph.node_link_data(g) # node-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(refreshGraph()))
 @app.route(endpoint_prefix + 'tree', methods=['GET'])
 @auth.login_required
 def get_tree():
-    logging.debug(auth.username() + ':servicing JSON GET tree')
+    logging.debug('%s:servicing JSON GET tree'%auth.username())
     refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
@@ -843,7 +819,7 @@ def get_tree():
 @app.route(endpoint_prefix + 'subtree/<string:sub_id>', methods=['GET'])
 @auth.login_required
 def get_subtree(sub_id):
-    logging.debug(auth.username() + ':servicing JSON GET sub-tree for <'+ sub_id + '>')
+    logging.debug('%s:servicing JSON GET sub-tree for <'%(auth.username(), sub_id + '>'))
     refreshFromdb()
     return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),sub_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
@@ -851,15 +827,15 @@ def get_subtree(sub_id):
 @auth.login_required
 def create_subject_with_relation():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create subject with relation:')
+        logging.debug('%s:servicing create subject with relation:'%auth.username())
         if not request.json or not 'subject' in request.json or not 'related' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         if 'sortorder' in request.json: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
         else: dict = {"subject": request.json['subject'], "related": request.json['related'], "relation": request.json['relation']}
         subject2 = dict['subject']
         if not 'id' in subject2 or not 'name' in subject2 or subject2['id'] == ''  or subject2['name'] == '':
-            logging.error(auth.username() + ':incorrect request-' + str(subject2))
+            logging.error('%s:incorrect request- %s'%(auth.username(), subject2))
             abort(400)
         subject1id = dict['related']
         if 'relation' in dict: relation = dict['relation']
@@ -875,23 +851,26 @@ def create_subject_with_relation():
             subject2['id'] = (subject2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
         # subj = subject2 #ast.literal_eval(subject2)
         try:
-            ktm.database.begin()
+            with ktm.database.atomic() as trans:
             ktm.Subject.create(id=subject2['id'],name=subject2['name'],description=subject2['description'])  # db create row
             subjectsJson.append(subject2)
             response = create_relation(subject1id,subject2['id'],relation=relation,sortorder=sortorder)
+                if not response:
+                    trans.rollback()
+                    logging.error('%s:Failed to create subject-%s'%(auth.username(), subject2))
             return jsonify({'subject': response})
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ':Failed to create subject-'+ str(subject2))
+            trans.rollback()
+            logging.error('%s:Failed to create subject- %s'%(auth.username(), subject2))
             return jsonify({'subject': False}), 409
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject', methods=['POST'])
 @auth.login_required
 def create_subject():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create subject')
+        logging.debug('%s:servicing create subject'%auth.username())
         if not request.json or not 'id' in request.json or not 'name' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         subject = {"id": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
         if find_item_json_dict_list(subjectsJson,'id',str(request.json['id'])) is not None:
@@ -903,16 +882,16 @@ def create_subject():
             subjectsJson.append(subject)
             return jsonify({'subject': subject}), 201
         except peewee.IntegrityError:
-            logging.error(auth.username() + ':Failed to create subject-' + subject['id'])
+            logging.error('%s:Failed to create subject- %s'%(auth.username(), subject['id']))
             return jsonify({'subject': subject}), 409
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject/<string:sub_id>', methods=['PUT'])
 @auth.login_required
 def update_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing update subject: ' + sub_id)
+        logging.debug('%s:servicing update subject:%s'%(auth.username(), sub_id))
         if (not request.json):
-            logging.error(auth.username() + ':JSON PUT error incorrect request-' + str(request.json))
+            logging.error('%s:JSON PUT error incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         for index in range(len(subjectsJson)):
             # json_acceptable_string = subjectsJson[index].replace("'", "\"")
@@ -930,16 +909,16 @@ def update_subject(sub_id):
                         update_relation(sub_id,request.json.get('relation', None),int(request.json.get('sortorder', None)))
                     return jsonify({'subject': dict}), 201
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to update subject-' + subj['id'])
+                    logging.error('%s:Failed to update subject- %s'%(auth.username(), subj['id']))
                     return jsonify({'subject': subj}), 409
-        logging.error(auth.username() + ':JSON PUT: id missing-'+ sub_id)
+        logging.error('%s:JSON PUT: id missing- %s'%(auth.username(), sub_id))
         abort(404)  # not found
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'subject-with-relation/<string:sub_id>', methods=['DELETE'])
 @auth.login_required
 def delete_subject_with_relation(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete subject with relation: ' + sub_id)
+        logging.debug('%s:servicing delete subject with relation:%s'%(auth.username(), sub_id))
         relations = find_relations(sub_id)
         for subject_with_relation in relations:
             subject1 = subject_with_relation['related']
@@ -953,7 +932,7 @@ def delete_subject_with_relation(sub_id):
                         subjdbrow.delete_instance()
                         del subjectsJson[subj_index]
                     except peewee.IntegrityError:
-                        logging.error(auth.username() + ':Failed to delete subject with relation-' + sub_id)
+                        logging.error('%s:Failed to delete subject with relation- %s'%(auth.username(), sub_id))
                         return jsonify({'result': False}), 409
                     break
         return jsonify({'result': True})
@@ -961,10 +940,10 @@ def delete_subject_with_relation(sub_id):
 @auth.login_required
 def delete_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete subject: ' + sub_id)
+        logging.debug('%s:servicing delete subject:%s'%(auth.username(), sub_id))
         sub = find_item_json_dict_list(subjectsJson,'id',sub_id)
         if sub is None or len(sub) == 0:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(404)
         # if len(sub) == 0:
         #     return False
@@ -976,8 +955,8 @@ def delete_subject(sub_id):
                     subj.delete_instance()
                     del subjectsJson[subj_index]
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to delete subject-' + subj['id'])
-                    return jsonify({'subject': subj}), 409
+                    logging.error('%s:Failed to delete subject - %s'%(auth.username(), subj.id))
+                    return jsonify({'subject': subj.id, 'status': 'Failed'}), 409
                 break
         return jsonify({'result': True})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -985,9 +964,9 @@ def delete_subject(sub_id):
 @auth.login_required
 def create_subject_to_subject():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-subject create relation')
+        logging.debug('%s:servicing subject-to-subject create relation'%auth.username())
         if not request.json or not 'subject1' in request.json or not 'subject2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': create_relation(request.json['subject1'],request.json['subject2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -995,9 +974,9 @@ def create_subject_to_subject():
 @auth.login_required
 def delete_subject_to_subject():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-subject delete relation')
+        logging.debug('%s:servicing subject-to-subject delete relation'%auth.username())
         if not request.json or not 'subject1' in request.json or not 'subject2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': delete_relation(request.json['subject1'],request.json['subject2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1005,9 +984,9 @@ def delete_subject_to_subject():
 @auth.login_required
 def move_subject(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-subject move subject')
+        logging.debug('%s:servicing subject-to-subject move subject'%auth.username())
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         if 'relation' in request.json:
             if 'sortorder' in request.json:return jsonify({'result': move_relation(sub_id,request.json['id'],request.json['relation'],request.json['sortorder'])})
@@ -1019,9 +998,9 @@ def move_subject(sub_id):
 @auth.login_required
 def copy_subtree(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject copy subtree:' + sub_id + ' to '+ str(request.json['id']))
+        logging.debug('%s:servicing subject copy subtree: %s to %s'%(auth.username(), sub_id, request.json['id']))
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': copy_children(sub_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1029,7 +1008,7 @@ def copy_subtree(sub_id):
 @auth.login_required
 def remove_subtree(sub_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing remove subtree ' + sub_id)
+        logging.debug('%s:servicing remove subtree%s'%(auth.username(), sub_id))
         return jsonify({'result': delete_children(sub_id)})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 
@@ -1046,42 +1025,42 @@ def shutdown():
 @app.route(endpoint_prefix + 'works', methods=['GET'])
 @auth.login_required
 def get_works():
-    logging.debug(auth.username() + ':servicing JSON GET All works')
+    logging.debug('%s:servicing JSON GET All works'%auth.username())
     return jsonify({'works': worksJson})
 @app.route(endpoint_prefix + 'work/<string:wrk_id>', methods=['GET'])
 @auth.login_required
 def get_work(wrk_id):
     # sub = [sub for sub in subjectsJson if sub['id'] == str(wrk_id)]
-    logging.debug(auth.username() + ':servicing JSON GET work: ' + wrk_id)
+    logging.debug('%s:servicing JSON GET work:%s'%(auth.username(), wrk_id))
     wrk = find_item_json_dict_list(worksJson,'id',wrk_id)
     if wrk is None or len(wrk) == 0:
-        logging.error(auth.username() + ':JSON GET id missing-' + wrk_id)
+        logging.error('%s:JSON GET id missing- %s'%(auth.username(), wrk_id))
         abort(404)
     return jsonify({'work': wrk})
 @app.route(endpoint_prefix + 'work-work-relations', methods=['GET'])
 @auth.login_required
 def get_work_work_relations():
-    logging.debug(auth.username() + ':servicing JSON GET All work-work-relations')
+    logging.debug('%s:servicing JSON GET All work-work-relations'%auth.username())
     return jsonify({'relations': wwrJson})
 @app.route(endpoint_prefix + 'work-to-work', methods=['GET'])
 @auth.login_required
 def get_work_relates_work():
-    logging.debug(auth.username() + ':servicing JSON GET All work-relates-to-work')
+    logging.debug('%s:servicing JSON GET All work-relates-to-work'%auth.username())
     return jsonify({'work-to-work': wrwJson})
 @app.route(endpoint_prefix + 'nodes-edges-work', methods=['GET'])
 @auth.login_required
 def get_nodes_edges_work():
-    logging.debug(auth.username() + ':servicing JSON GET work nodes & edges')
+    logging.debug('%s:servicing JSON GET work nodes & edges'%auth.username())
     work_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(g) # node_id-link format to serialize
+    # d = json_graph.node_link_data(g) # node-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(work_refreshGraph()))
 @app.route(endpoint_prefix + 'tree-work', methods=['GET'])
 @auth.login_required
 def get_tree_work():
-    logging.debug(auth.username() + ':servicing JSON GET work tree')
+    logging.debug('%s:servicing JSON GET work tree'%auth.username())
     work_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
@@ -1092,7 +1071,7 @@ def get_tree_work():
 @app.route(endpoint_prefix + 'subtree-work/<string:wrk_id>', methods=['GET'])
 @auth.login_required
 def get_subtree_work(wrk_id):
-    logging.debug(auth.username() + ':servicing JSON GET work sub-tree for <'+ wrk_id + '>')
+    logging.debug('%s:servicing JSON GET work sub-tree for <'%(auth.username(), wrk_id + '>'))
     work_refreshFromdb()
     return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),wrk_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
@@ -1100,15 +1079,15 @@ def get_subtree_work(wrk_id):
 @auth.login_required
 def create_work_with_relation():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create work with relation:')
+        logging.debug('%s:servicing create work with relation:'%auth.username())
         if not request.json or not 'work' in request.json or not 'related' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         if 'sortorder' in request.json: dict = {"work": request.json['work'], "related": request.json['related'], "relation": request.json['relation'],'sortorder':request.json['sortorder']}
         else: dict = {"work": request.json['work'], "related": request.json['related'], "relation": request.json['relation']}
         work2 = dict['work']
         if not 'id' in work2 or not 'name' in work2 or work2['id'] == ''  or work2['name'] == '':
-            logging.error(auth.username() + ':incorrect request-' + str(work2))
+            logging.error('%s:incorrect request- %s'%(auth.username(), str(work2)))
             abort(400)
         work1id = dict['related']
         if 'relation' in dict: relation = dict['relation']
@@ -1124,23 +1103,26 @@ def create_work_with_relation():
             work2['id'] = (work2['id'] + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for i in range(16)))[0:19]
         # workx = work2 #ast.literal_eval(work2)
         try:
-            ktm.database.begin()
+            with ktm.database.atomic() as trans:
             ktm.Work.create(id=work2['id'],name=work2['name'],description=work2['description'])  # db create row
             worksJson.append(work2)
             response = work_create_relation(work1id,work2['id'],relation=relation,sortorder=sortorder)
+                if not response:
+                    trans.rollback()
+                    logging.error('%s:Failed to create work-%s'%(auth.username(), work2))
             return jsonify({'work': response})
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ':Failed to create work-'+ str(work2))
+            trans.rollback()
+            logging.error('%s:Failed to create work-%s'%(auth.username(), work2))
             return jsonify({'work': False})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'work', methods=['POST'])
 @auth.login_required
 def create_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create work')
+        logging.debug('%s:servicing create work'%auth.username())
         if not request.json or not 'id' in request.json or not 'name' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         work = {"id": request.json['id'], "name": request.json['name'], "description": request.json.get('description', "")}
         if find_item_json_dict_list(worksJson,'id',str(request.json['id'])) is not None:
@@ -1152,16 +1134,16 @@ def create_work():
             worksJson.append(work)
             return jsonify({'work': work}), 201
         except:
-            logging.error(auth.username() + ':Failed to create work-' + work['id'])
+            logging.error('%s:Failed to create work- %s'%(auth.username(), work['id']))
             return jsonify({'work': work}), 409
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'work/<string:wrk_id>', methods=['PUT'])
 @auth.login_required
 def update_work(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing update work: ' + wrk_id)
+        logging.debug('%s:servicing update work:%s'%(auth.username(), wrk_id))
         if (not request.json):
-            logging.error(auth.username() + ':JSON PUT error incorrect request-' + str(request.json))
+            logging.error('%s:JSON PUT error incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         for index in range(len(worksJson)):
             # json_acceptable_string = subjectsJson[index].replace("'", "\"")
@@ -1179,16 +1161,16 @@ def update_work(wrk_id):
                         work_update_relation(wrk_id,request.json.get('relation', None),int(request.json.get('sortorder', None)))
                     return jsonify({'work': dict}), 201
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to update work-' + workx['id'])
+                    logging.error('%s:Failed to update work- %s'%(auth.username(), workx['id']))
                     return jsonify({'work': workx}), 409
-        logging.error(auth.username() + ':JSON PUT: id missing-'+ wrk_id)
+        logging.error('%s:JSON PUT: id missing- %s'%(auth.username(), wrk_id))
         abort(404)  # not found
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'work-with-relation/<string:wrk_id>', methods=['DELETE'])
 @auth.login_required
 def delete_work_with_relation(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete work with relation: ' + wrk_id)
+        logging.debug('%s:servicing delete work with relation:%s'%(auth.username(), wrk_id))
         relations = work_find_relations(wrk_id)
         for work_with_relation in relations:
             work1 = work_with_relation['related']
@@ -1202,7 +1184,7 @@ def delete_work_with_relation(wrk_id):
                         workdbrow.delete_instance()
                         del worksJson[work_index]
                     except peewee.IntegrityError:
-                        logging.error(auth.username() + ':Failed to  delete work with relation-' + wrk_id)
+                        logging.error('%s:Failed to  delete work with relation- %s'%(auth.username(), wrk_id))
                         return jsonify({'result': False}), 409
                     break
         return jsonify({'result': True})
@@ -1210,10 +1192,10 @@ def delete_work_with_relation(wrk_id):
 @auth.login_required
 def delete_work(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete subject: ' + wrk_id)
+        logging.debug('%s:servicing delete subject: %s'%(auth.username(), wrk_id))
         wrk = find_item_json_dict_list(worksJson,'id',wrk_id)
         if wrk is None or len(wrk) == 0:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(404)
         # if len(wrk) == 0:
         #     return False
@@ -1225,7 +1207,7 @@ def delete_work(wrk_id):
                     workx.delete_instance()
                     del worksJson[work_index]
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to create subject-' + workx['id'])
+                    logging.error('%s:Failed to create subject- %s'%(auth.username(), workx['id']))
                     return jsonify({'result': False}), 409
                 break
         return jsonify({'result': True})
@@ -1234,9 +1216,9 @@ def delete_work(wrk_id):
 @auth.login_required
 def create_work_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing work-to-work create relation')
+        logging.debug('%s:servicing work-to-work create relation'%auth.username())
         if not request.json or not 'work1' in request.json or not 'work2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': work_create_relation(request.json['work1'],request.json['work2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1244,9 +1226,9 @@ def create_work_to_work():
 @auth.login_required
 def delete_work_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing work-to-work delete relation')
+        logging.debug('%s:servicing work-to-work delete relation'%auth.username())
         if not request.json or not 'work1' in request.json or not 'work2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': work_delete_relation(request.json['work1'],request.json['work2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1254,9 +1236,9 @@ def delete_work_to_work():
 @auth.login_required
 def move_work(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing work-to-work move relation')
+        logging.debug('%s:servicing work-to-work move relation'%auth.username())
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         if 'relation' in request.json:
             if 'sortorder' in request.json:return jsonify({'result': work_move_relation(wrk_id,request.json['id'],request.json['relation'],request.json['sortorder'])})
@@ -1268,9 +1250,9 @@ def move_work(wrk_id):
 @auth.login_required
 def work_copy_subtree(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing work copy subtree:' + wrk_id + ' to '+ str(request.json['id']))
+        logging.debug('%s:servicing work copy subtree:%s to %s'%(auth.username(), wrk_id, str(request.json['id'])))
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': work_copy_children(wrk_id,request.json['id'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1278,7 +1260,7 @@ def work_copy_subtree(wrk_id):
 @auth.login_required
 def work_remove_subtree(wrk_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing remove subtree ' + wrk_id)
+        logging.debug('%s:servicing remove subtree %s'%(auth.username(), wrk_id))
         return jsonify({'result': work_delete_children(wrk_id)})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 
@@ -1287,20 +1269,20 @@ def work_remove_subtree(wrk_id):
 @app.route(endpoint_prefix + 'subject-work-relations', methods=['GET'])
 @auth.login_required
 def get_subject_work_relations():
-    logging.debug(auth.username() + ':servicing JSON GET All possible subject-work-relations')
+    logging.debug('%s:servicing JSON GET All possible subject-work-relations'%auth.username())
     return jsonify({'relations': wsrJson})
 @app.route(endpoint_prefix + 'subject-to-work', methods=['GET'])
 @auth.login_required
 def get_subject_relatesto_work():
-    logging.debug(auth.username() + ':servicing JSON GET All subject-relates-to-work')
+    logging.debug('%s:servicing JSON GET All subject-relates-to-work'%auth.username())
     return jsonify({'subject-to-work': shwJson})
 @app.route(endpoint_prefix + 'subject-to-work', methods=['POST'])
 @auth.login_required
 def create_subject_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-work create relation')
+        logging.debug('%s:servicing subject-to-work create relation'%auth.username())
         if not request.json or not 'subject' in request.json or not 'work' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': subject_work_create_relation(request.json['subject'],request.json['work'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1308,22 +1290,22 @@ def create_subject_to_work():
 @auth.login_required
 def delete_subject_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing subject-to-work delete relation')
+        logging.debug('%s:servicing subject-to-work delete relation'%auth.username())
         if not request.json or not 'subject' in request.json or not 'work' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': subject_work_delete_relation(request.json['subject'],request.json['work'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'tree-subject-work/<string:subject>', methods=['GET'])
 @auth.login_required
 def get_tree_subject_to_work(subject):
-    logging.debug(auth.username() + ':servicing JSON GET subject-work tree')
+    logging.debug('%s:servicing JSON GET subject-work tree'%auth.username())
     subject_work_refreshFromdb();
     return jsonify(subject_work_add_relation(json_graph.tree_data(nx.bfs_tree(subject_work_refreshGraph(subject),subject),subject)))
 @app.route(endpoint_prefix + 'tree-work-subject/<string:work>', methods=['GET'])
 @auth.login_required
 def get_tree_work_to_subject(work):
-    logging.debug(auth.username() + ':servicing JSON GET work-subject tree')
+    logging.debug('%s:servicing JSON GET work-subject tree'%auth.username())
     subject_work_refreshFromdb();
     return jsonify(work_subject_add_relation(json_graph.tree_data(nx.bfs_tree(work_subject_refreshGraph(work),work),work)))
 
@@ -1332,42 +1314,42 @@ def get_tree_work_to_subject(work):
 @app.route(endpoint_prefix + 'persons', methods=['GET'])
 @auth.login_required
 def get_persons():
-    logging.debug(auth.username() + ':servicing JSON GET All persons')
+    logging.debug('%s:servicing JSON GET All persons'%auth.username())
     return jsonify({'persons': personsJson})
 @app.route(endpoint_prefix + 'person/<string:prs_id>', methods=['GET'])
 @auth.login_required
 def get_person(prs_id):
     # sub = [sub for sub in subjectsJson if sub['id'] == str(prs_id)]
-    logging.debug(auth.username() + ':servicing JSON GET person: ' + prs_id)
+    logging.debug('%s:servicing JSON GET person: %s'%(auth.username(), prs_id))
     prs = find_item_json_dict_list(personsJson,'id',prs_id)
     if prs is None or len(prs) == 0:
-        logging.error(auth.username() + ':JSON GET id missing-' + prs_id)
+        logging.error('%s:JSON GET id missing- %s'%(auth.username(), prs_id))
         abort(404)
     return jsonify({'person': prs})
 @app.route(endpoint_prefix + 'person-person-relations', methods=['GET'])
 @auth.login_required
 def get_person_person_relations():
-    logging.debug(auth.username() + ':servicing JSON GET All person-person-relations')
+    logging.debug('%s:servicing JSON GET All person-person-relations'%auth.username())
     return jsonify({'relations': pprJson})
 @app.route(endpoint_prefix + 'person-to-person', methods=['GET'])
 @auth.login_required
 def get_person_relates_person():
-    logging.debug(auth.username() + ':servicing JSON GET All person-relates-to-person')
+    logging.debug('%s:servicing JSON GET All person-relates-to-person'%auth.username())
     return jsonify({'person-to-person': prpJson})
 @app.route(endpoint_prefix + 'nodes-edges-person', methods=['GET'])
 @auth.login_required
 def get_nodes_edges_person():
-    logging.debug(auth.username() + ':servicing JSON GET person nodes & edges')
+    logging.debug('%s:servicing JSON GET person nodes & edges'%auth.username())
     person_refreshFromdb()
     # gp = refreshGraph()
     # write json formatted data
-    # d = json_graph.node_link_data(gp) # node_id-link format to serialize
+    # d = json_graph.node_link_data(gp) # node-link format to serialize
     # write json
     return jsonify(json_graph.node_link_data(person_refreshGraph()))
 @app.route(endpoint_prefix + 'tree-person', methods=['GET'])
 @auth.login_required
 def get_tree_person():
-    logging.debug(auth.username() + ':servicing JSON GET person tree')
+    logging.debug('%s:servicing JSON GET person tree'%auth.username())
     person_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
@@ -1378,7 +1360,7 @@ def get_tree_person():
 @app.route(endpoint_prefix + 'subtree-person/<string:prs_id>', methods=['GET'])
 @auth.login_required
 def get_subtree_person(prs_id):
-    logging.debug(auth.username() + ':servicing JSON GET person sub-tree for <'+ prs_id + '>')
+    logging.debug('%s:servicing JSON GET person sub-tree for <'%(auth.username(), prs_id + '>'))
     person_refreshFromdb()
     return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),"all"),prs_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relations) below -----------------------------
@@ -1386,14 +1368,14 @@ def get_subtree_person(prs_id):
 @auth.login_required
 def create_person_with_relation():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create person with relation:')
+        logging.debug('%s:servicing create person with relation:'%auth.username())
         if not request.json or not 'person' in request.json or not 'related' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         dict = {"person": request.json['person'], "related": request.json['related'], "relation": request.json['relation']}
         person2 = dict['person']
         if not 'id' in person2 or person2['id'] == '':
-            logging.error(auth.username() + ':incorrect request-' + str(person2))
+            logging.error('%s:incorrect request- %s'%(auth.username(), str(person2)))
             abort(400)
         person1id = dict['related']
         if 'relation' in dict: relation = dict['relation']
@@ -1432,27 +1414,29 @@ def create_person_with_relation():
         else:
             if datetime.strptime(death, '%Y-%m-%d') < datetime.strptime(birth, '%Y-%m-%d'):
             # if person['death'] < person['birth']:
-                logging.error(auth.username() + ':death-' + str(death) + ' before birth-' + str(birth) + '.. set to birth date')
+                logging.error('%s:death-' + str(death) + ' before birth- %s'%(auth.username(), str(birth) + '.. set to birth date'))
                 death = birth
         try:
+            with ktm.database.atomic() as trans:
             ktm.Person.create(id=person2['id'],first=first,last=last,middle=middle,nick=nick,other=other,initials=initials, \
                               living=living,birth=birth,death=death,biography=biography)  # db create row
             personsJson.append(person2)
             response = person_create_relation(person1id,person2['id'],relation=relation)
+                if not response:
+                    trans.rollback()
+                    logging.error('%s:Failed to create person-%s'%(auth.username(), person2))
+                return jsonify({'person': response})
         except peewee.IntegrityError:
-            ktm.database.rollback()
-            logging.error(auth.username() + ':Failed to create person-' + str(person2))
-            response = False
-        finally:
-            return jsonify({'person': response})
+            trans.rollback()
+            logging.error('%s:Failed to create person-%s'%(auth.username(), person2))
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'person', methods=['POST'])
 @auth.login_required
 def create_person():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing create person')
+        logging.debug('%s:servicing create person'%auth.username())
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s:incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         person = {"id": request.json['id'], "first": request.json.get('first',''), "last": request.json.get('last', ""), "middle": request.json.get('middle', ""), \
                   "nick": request.json.get('nick', ""), "initials": request.json.get('initials', ""), "other": request.json.get('other', ""), \
@@ -1464,7 +1448,7 @@ def create_person():
             if person['death'] != '':
                 if datetime.strptime(person['death'], '%Y-%m-%d') < datetime.strptime(person['birth'], '%Y-%m-%d'):
                     # if person['death'] < person['birth']:
-                    logging.error(auth.username() + ':death-' + str(person['death']) + ' before birth-' + str(person['birth']) + '.. set to birth date')
+                    logging.error('%s:death-' + str(person['death']) + ' before birth- %s'%(auth.username(), str(person['birth']) + '.. set to birth date'))
                     person['death'] = person['birth']
         if find_item_json_dict_list(personsJson,'id',str(request.json['id'])) is not None:
             # subj = ast.literal_eval(str(sub))
@@ -1476,16 +1460,16 @@ def create_person():
             personsJson.append(person)
             return jsonify({'person': person}), 201
         except peewee.IntegrityError:
-            logging.error(auth.username() + ':Failed to create person-' + person['id'])
+            logging.error('%s:Failed to create person- %s'%(auth.username(), person['id']))
             return jsonify({'person': person}), 409
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'person/<string:prs_id>', methods=['PUT'])
 @auth.login_required
 def update_person(prs_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing update person: ' + prs_id)
+        logging.debug('%s:servicing update person:%s'%(auth.username(), prs_id))
         if (not request.json):
-            logging.error(auth.username() + ':JSON PUT error incorrect request-' + str(request.json))
+            logging.error('%s:JSON PUT error incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         for index in range(len(personsJson)):
             # json_acceptable_string = subjectsJson[index].replace("'", "\"")
@@ -1516,7 +1500,7 @@ def update_person(prs_id):
                     else:
                         personx.death = dict['death']
                         if personx.death != None and personx.birth != None and personx.death < personx.birth:
-                            logging.error(auth.username() + ':death-' + str(personx.death) + ' before birth-' + str(personx.birth) + '.. set to birth date' )
+                            logging.error('%s:death-' + str(personx.death) + ' before birth- %s'%(auth.username(), str(personx.birth) + '.. set to birth date' ))
                             personx.death = personx.birth
                     personx.biography = dict['biography']
                     personx.save()
@@ -1524,16 +1508,16 @@ def update_person(prs_id):
                         person_update_relation(prs_id,request.json.get('relation', None))
                     return jsonify({'person': dict}), 201
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to update person-' + personx['id'])
+                    logging.error('%s:Failed to update person- %s'%(auth.username(), personx['id']))
                     return jsonify({'person': personx}), 409
-        logging.error(auth.username() + ':JSON PUT - id missing-'+ prs_id)
+        logging.error('%s:JSON PUT - id missing- %s'%(auth.username(), prs_id))
         abort(404)  # not found
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'person-with-relation/<string:prs_id>', methods=['DELETE'])
 @auth.login_required
 def delete_person_with_relation(prs_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete person with relation: ' + prs_id)
+        logging.debug('%s:servicing delete person with relation:%s'%(auth.username(), prs_id))
         relations = person_find_relations(prs_id)
         for person_with_relation in relations:
             person1 = person_with_relation['related']
@@ -1547,7 +1531,7 @@ def delete_person_with_relation(prs_id):
                         persondbrow.delete_instance()
                         del personsJson[person_index]
                     except peewee.IntegrityError:
-                        logging.error(auth.username() + ':failed to delete person with relation: ' + prs_id)
+                        logging.error('%s:failed to delete person with relation:  %s'%(auth.username(), prs_id))
                         return jsonify({'result': False}), 409
                     break
         return jsonify({'result': True})
@@ -1555,10 +1539,10 @@ def delete_person_with_relation(prs_id):
 @auth.login_required
 def delete_person(prs_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing delete subject: ' + prs_id)
+        logging.debug('%s: servicing delete subject: %s'%(auth.username(), prs_id))
         prs = find_item_json_dict_list(personsJson,'id',prs_id)
         if prs is None or len(prs) == 0:
-            logging.error(auth.username() + ':incorrect request-' + str(request.json))
+            logging.error('%s: incorrect request - %s'%(auth.username(), prs_id))
             abort(404)
         # if len(wrk) == 0:
         #     return False
@@ -1570,7 +1554,7 @@ def delete_person(prs_id):
                     personx.delete_instance()
                     del personsJson[person_index]
                 except peewee.IntegrityError:
-                    logging.error(auth.username() + ':Failed to delete person-' + personx['id'])
+                    logging.error('%s: Failed to delete person - %s'%((auth.username(), personx['id'])))
                     return jsonify({'result': False}), 409
                 break
         return jsonify({'result': True})
@@ -1579,9 +1563,9 @@ def delete_person(prs_id):
 @auth.login_required
 def create_person_to_person():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing person-to-person create relation')
+        logging.debug('%s:servicing person-to-person create relation'%auth.username())
         if not request.json or not 'person1' in request.json or not 'person2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s: JSON POST incorrect request - %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': person_create_relation(request.json['person1'],request.json['person2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1589,9 +1573,9 @@ def create_person_to_person():
 @auth.login_required
 def delete_person_to_person():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing person-to-person delete relation')
+        logging.debug('%s:servicing person-to-person delete relation'%auth.username())
         if not request.json or not 'person1' in request.json or not 'person2' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': person_delete_relation(request.json['person1'],request.json['person2'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1599,9 +1583,9 @@ def delete_person_to_person():
 @auth.login_required
 def move_person(prs_id):
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing person-to-person move relation')
+        logging.debug('%s:servicing person-to-person move relation'%auth.username())
         if not request.json or not 'id' in request.json:
-            logging.error(auth.username() + ' :JSON POST incorrect request-' + str(request.json))
+            logging.error('%s :JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         if 'relation' in request.json:
             return jsonify({'result': person_move_relation(prs_id,request.json['id'],request.json['relation'])})
@@ -1613,20 +1597,20 @@ def move_person(prs_id):
 @app.route(endpoint_prefix + 'person-work-relations', methods=['GET'])
 @auth.login_required
 def get_person_work_relations():
-    logging.debug(auth.username() + ':servicing JSON GET All possible person-work-relations')
+    logging.debug('%s:servicing JSON GET All possible person-work-relations'%auth.username())
     return jsonify({'relations': pwrJson})
 @app.route(endpoint_prefix + 'person-to-work', methods=['GET'])
 @auth.login_required
 def get_person_relatesto_work():
-    logging.debug(auth.username() + ':servicing JSON GET All person-relates-to-work')
+    logging.debug('%s:servicing JSON GET All person-relates-to-work'%auth.username())
     return jsonify({'person-to-work': phwJson})
 @app.route(endpoint_prefix + 'person-to-work', methods=['POST'])
 @auth.login_required
 def create_person_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing person-to-work create relation')
+        logging.debug('%s:servicing person-to-work create relation'%auth.username())
         if not request.json or not 'person' in request.json or not 'work' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': person_work_create_relation(request.json['person'],request.json['work'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
@@ -1634,22 +1618,22 @@ def create_person_to_work():
 @auth.login_required
 def delete_person_to_work():
     if get_role(auth.username())in ['editor','admin']:
-        logging.debug(auth.username() + ':servicing person-to-work delete relation')
+        logging.debug('%s:servicing person-to-work delete relation'%auth.username())
         if not request.json or not 'person' in request.json or not 'work' in request.json or not 'relation' in request.json:
-            logging.error(auth.username() + ':JSON POST incorrect request-' + str(request.json))
+            logging.error('%s:JSON POST incorrect request- %s'%(auth.username(), request.json))
             abort(400)
         return jsonify({'result': person_work_delete_relation(request.json['person'],request.json['work'],request.json['relation'])})
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 @app.route(endpoint_prefix + 'tree-person-work/<string:person>', methods=['GET'])
 @auth.login_required
 def get_tree_person_to_work(person):
-    logging.debug(auth.username() + ':servicing JSON GET person-work tree')
+    logging.debug('%s:servicing JSON GET person-work tree'%auth.username())
     person_work_refreshFromdb();
     return jsonify(person_work_add_relation(json_graph.tree_data(nx.bfs_tree(person_work_refreshGraph(person),person),person)))
 @app.route(endpoint_prefix + 'tree-work-person/<string:work>', methods=['GET'])
 @auth.login_required
 def get_tree_work_to_person(work):
-    logging.debug(auth.username() + ':servicing JSON GET work-person tree')
+    logging.debug('%s:servicing JSON GET work-person tree'%auth.username())
     person_work_refreshFromdb();
     return jsonify(work_person_add_relation(json_graph.tree_data(nx.bfs_tree(work_person_refreshGraph(work),work),work)))
 
@@ -1665,15 +1649,15 @@ def countsBynode(nodeList,keyname):
     for node in nodeList:
         if node[keyname] not in count: count[node[keyname]] = 1
         else:
-            # print ('key: %s count: %d' (node_id[keyname],count[node_id[keyname]]))
-            count[node[keyname]] = count[node[keyname]] + 1
+            # print ('key: %s count: %d' (node[keyname],count[node_id[keyname]]))
+            count[node[keyname]] += 1
     return count
-@app.route(endpoint_prefix + 'node_id-counts', methods=['GET'])
+@app.route(endpoint_prefix + 'node-counts', methods=['GET'])
 @auth.login_required
 def get_node_counts():
     subject_counts = countsBynode(srsJson,'subject1')
-    # work_counts = countsBynode(wrwJson,'work1')
+    work_counts = countsBynode(wrwJson, 'work1')
     person_counts = countsBynode(prpJson,'person1')
-    return jsonify(subject_counts)
+    return jsonify({"subject_counts": subject_counts, "work_counts": work_counts, "person_counts": person_counts})
 if __name__ == '__main__':
     app.run(debug=True)
