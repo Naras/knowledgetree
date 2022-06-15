@@ -36,7 +36,7 @@ function getIp() {
     return getParameterByName('userip')
 }
 // var url = "http://127.0.0.1:5000/knowledgeTree/api/v1.0/";
-var url = "http://" + getIp() + ":5000/knowledgeTree/api/v1.0/";
+var url = "http://" + getIp() + "/knowledgeTree/api/v1.0/";
 
 function getauth() {
     // hidden form will have a fld where we will store string version of passed query string

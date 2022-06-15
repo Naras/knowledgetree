@@ -27,7 +27,11 @@ def get_dbhost():
 database_url = get_dbhost()
 if database_url==None:
     # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase('knowledgetree', **{'user': get_username(), 'password': get_password()})
+    localdb = open('localdb.txt')
+    dbname = localdb.readlines()
+    localdb.close()
+    dbname = dbname[0].split('=')[1]
+    database = MySQLDatabase(dbname, **{'user': get_username(), 'password': get_password()})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
     database = MySQLDatabase('knowledgetree', host=database_url, port=3306, user = get_username(), password=get_password())
@@ -47,13 +51,18 @@ class Subject(BaseModel):
     class Meta:
         table_name = 'subject'
 
-# class Orphan(BaseModel):
-#     description = CharField(db_column='Description', null=True)
-#     name = CharField(db_column='Name')
-#     id = CharField(primary_key=True)
-#
-#     class Meta:
-#         db_table = 'orphan'
+class subject_no_parent(BaseModel):
+    id = CharField(primary_key=False)
+    class Meta:
+        db_table = 'subject_no_parent'
+class work_no_parent(BaseModel):
+    id = CharField(primary_key=False)
+    class Meta:
+        db_table = 'work_no_parent'
+class person_no_parent(BaseModel):
+    id = CharField(primary_key=False)
+    class Meta:
+        db_table = 'person_no_parent'
 
 class SubjectSubjectRelation(BaseModel):
     description = CharField(column_name='Description', null=True)

@@ -38,8 +38,8 @@ def restGet(url):
     return response
 def restPost(url,data):
     completeUrl = prefix + url
-    # print ('Posting:',  completeUrl)
-    return requests.post(completeUrl, json = data, auth=('admin',get_password('admin')))
+    # print('Posting:url %s jsonData %s'%(completeUrl, data))
+    return requests.post(completeUrl, json=data, auth=('admin',get_password('admin')))
 def restPut(url,data):
     completeUrl = prefix + url
     # print ('Putting:',  completeUrl)
@@ -125,14 +125,14 @@ class TestUM(unittest.TestCase):
         # ----------------create a parent subject--------------------------
         response = restPost('subject',{'id': 'idtestParent','name': 'name-test-parent','description': 'description-test-parent'})
         # print ('create subject status:', response.status_code, '\n',response.text)
-        self.assertEqual(201,response.status_code)
+        self.assertEqual(201, response.status_code)
         # create a child subject
-        response = restPost('subject-with-relation',\
+        response = restPost('subject-with-relation',
                         {"subject": {"id": "idtestChild", "name": "name-test-child", "description": "description-test-child"},
-                         "related": "idtestParent", "relation": "Anga","sortorder": 65 })
-        self.assertEqual(200,response.status_code)
-        self.assertEqual ('{"subject":true}',response.text.replace('\n','').replace(' ',''))
-        print( 'status:', response.status_code, '\n',json.loads(response.text.replace('\n','')))
+                         "related": "idtestParent", "relation": "Anga","sortorder": 65})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual ('{"subject":true}', response.text.replace('\n','').replace(' ',''))
+        # print( 'status:', response.status_code, '\n', json.loads(response.text.replace('\n','')))
         # # pprint.pprintresponse.json())
 
         # create a duplicate child subject
@@ -144,8 +144,8 @@ class TestUM(unittest.TestCase):
         self.assertEqual ('{"subject":true}',response.text.replace('\n','').replace(' ',''))
         '''
         # ----------------get the parent subject------------------
-        response=restGet('subject/idtestParent')
-        self.assertEqual(200,response.status_code)
+        response = restGet('subject/idtestParent')
+        self.assertEqual(200, response.status_code)
         self.assertEqual('{"subject":{"description":"description-test-parent","id":"idtestParent","name":"name-test-parent"}}', \
             response.text.replace('\n','').replace(' ',''))
 

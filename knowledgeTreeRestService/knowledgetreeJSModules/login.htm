@@ -61,7 +61,7 @@
     <script src="webUITree/d3.v3.min.js"></script>
     <script src="webUITree/jquery.js"></script>
     <form>
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+        <script type="text/javascript" src="webUITree/jquery.js"></script>
         <div class="container">
             <label><b>Username</b></label>
             <input type="text" id="uname" placeholder="Enter Username" name="uname" required>
@@ -69,7 +69,7 @@
             <label><b>Password</b></label>
             <input type="password" id="psw" placeholder="Enter Password" name="psw" required>
             <br>
-            <!--<input type="checkbox" id="orientation" name="orientation" checked="checked"> Display/Landscape (uncheck for Display/Portrait)-->
+                
             <!--<input type="checkbox" id="displayWorkTree" name="displayWorkTree"> Display Work Tree (uncheck for Display Subject Tree)-->
         </div>
         <input type="button" id="btnQueryString" value="Login" />
@@ -103,12 +103,14 @@
                     // var orientation = encodeURIComponent($("#orientation").val());
                     var landingpage = "webUITree/index.html";
                     // if (document.getElementById('displayWorkTree').checked) landingpage = "webUITree/index_work.html";
-                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1";
+                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1:5000";
                     window.location.href = url; // local
+                    console.log('url:', url)
                     // d3.csv("restServiceUrl.csv", function(content) {
                     //     var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + content[0]["IpAddress"]; // + "&orientation=" + orientation;
                     //     window.location.href = url; // remote
-                    // });
+                    // console.log('url:', url)
+                //  });
                 });
             });
         </script>
