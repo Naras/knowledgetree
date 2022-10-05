@@ -25,16 +25,19 @@ def get_dbhost():
         return None
 
 database_url = get_dbhost()
-if database_url==None:
-    # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
+try:
     localdb = open('localdb.txt')
     dbname = localdb.readlines()
     localdb.close()
     dbname = dbname[0].split('=')[1]
+except FileNotFoundError as e:
+    dbname = 'knowledgetree'
+if database_url==None:
+    # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
     database = MySQLDatabase(dbname, **{'user': get_username(), 'password': get_password()})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase('knowledgetree', host=database_url, port=3306, user = get_username(), password=get_password())
+    database = MySQLDatabase(dbname, host=database_url, port=3306, user = get_username(), password=get_password())
 
 class UnknownField(object):
     pass

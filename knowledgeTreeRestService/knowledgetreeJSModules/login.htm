@@ -89,6 +89,7 @@
             "use strict";
             $(function() {
                 $("#btnQueryString").bind("click", function() {
+                    var localORRemote = "local";  // local or remote server
                     var cipher = "";
                     var text = encodeURIComponent($("#psw").val());
                     var shift = 10;
@@ -102,15 +103,17 @@
                     var nam = encodeURIComponent($("#uname").val());
                     // var orientation = encodeURIComponent($("#orientation").val());
                     var landingpage = "webUITree/index.html";
-                    // if (document.getElementById('displayWorkTree').checked) landingpage = "webUITree/index_work.html";
-                    var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1:5000";
-                    window.location.href = url; // local
-                    console.log('url:', url)
-                    // d3.csv("restServiceUrl.csv", function(content) {
-                    //     var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + content[0]["IpAddress"]; // + "&orientation=" + orientation;
-                    //     window.location.href = url; // remote
-                    // console.log('url:', url)
-                //  });
+                    if (localORRemote == "local") {
+                        var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1:5000";
+                        window.location.href = url; // local
+                        console.log('url(local):', url)
+                    } else {
+                        d3.csv("restServiceUrl.csv", function(content) {
+                            var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + content[0]["IpAddress"]; // + "&orientation=" + orientation;
+                            window.location.href = url; // remote
+                            console.log('url(remote):', url)
+                        });
+                    }
                 });
             });
         </script>

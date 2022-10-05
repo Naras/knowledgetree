@@ -7,10 +7,8 @@ import random
 import networkx as nx
 from networkx.readwrite import json_graph
 restServiceUrl = open('knowledgetreeJSModules/restServiceUrl.csv')
-prefix = 'http://' + list(restServiceUrl.readlines())[1][:-1] + ':5000/knowledgeTree/api/v1.0/'
+prefix = 'http://' + list(restServiceUrl.readlines())[1][:-1] + '/knowledgeTree/api/v1.0/'
 restServiceUrl.close()
-# prefix = 'http://ec2-13-58-244-107.us-east-2.compute.amazonaws.com:5000/knowledgeTree/api/v1.0/'
-# prefix = 'http://127.0.0.1:5000/knowledgeTree/api/v1.0/'
 # echoservice = 'http://httpbin.org/post'
 def ceasar(plain,shift):  # shift each letter by shift
         return "".join([chr((ord(x)- start(x) + shift) % 26 + start(x)) for (x) in list(plain)])
