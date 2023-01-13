@@ -567,15 +567,12 @@ def person_refreshGraph():
     g = nx.Graph()
     for row in personsJson:
         g.add_node(row['id'])
-        # if 'first' in row: g.nodes_id[row['id']]['first'] = row['first']
-        # if 'last' in row: g.nodes_id[row['id']]['last'] = row['last']
-        # if 'middle' in row: g.nodes_id[row['id']]['middle'] = row['middle']
-        # if 'nick' in row: g.nodes_id[row['id']]['nick'] = row['nick']
-        # if 'other' in row: g.nodes_id[row['id']]['other'] = row['other']
     for row in prpJson:
         g.add_edge(row['person1'],row['person2'])
         g[row['person1']][row['person2']]['relation'] = row['relation']
-        # print g[row['person1']][row['person2']]
+        if 'sortorder' in row:
+            g[row['person1']][row['person2']]['sortorder'] = row['sortorder']
+        else:g[row['person1']][row['person2']]['sortorder'] = '99'
     return g
 def person_refreshFromdb():
     # logging.debug('refresh works and relations from db')
@@ -612,6 +609,31 @@ def person_move_relation(person,newparent,newrelation=None):  # moves a person f
     except Exception as e:
         logging.error('%s :move person - Failed to delete relation - %s exception %s'%(auth.username(), person, e))
     return person_create_relation(newparent,person,newrelation)
+def person_delete_children(id):
+    children = []
+    for item in prpJson:
+        if item['person1'] == id:
+            children.append(item)
+    for child in children: person_delete_children(child['person2'])
+    relations = person_find_relations(id)
+    for person_with_relation in relations:
+        person1 = person_with_relation['related']
+        relation = person_with_relation['relation']
+        person_delete_relation(person1, id, relation)  # each relation with another person1 removed
+    # check if work has person connections and remove them
+    relations = find_work_allperson_relations(id)
+    for dict in relations: person_work_delete_relation(dict['person'],dict['work'],dict['relation'])
+    # check if work has subject  connections and remove them
+    # relations = find_work_allsubject_relations(id)
+    # for dict in relations: subject_work_delete_relation(dict['subject'],dict['work'],dict['relation'])
+    for person_index in range(len(personsJson)):  # remove subject   from db & Json list
+        person_as_dict = personsJson[person_index]  # ast.literal_eval(subjectsJson[subj_index])
+        if person_as_dict['id'] == id or person_as_dict[u'id'] == id:
+            persondbrow = ktm.Person.get(ktm.Person.id == person_as_dict['id'])  # db get/delete row
+            persondbrow.delete_instance()
+            del personsJson[person_index]
+            break
+    return True
 
 def find_person_work_relations(person,work):
     relations = []
@@ -1087,7 +1109,7 @@ def get_tree_work():
 @auth.login_required
 @cross_origin()
 def get_subtree_work(wrk_id):
-    logging.debug('%s:servicing JSON GET work sub-tree for <'%(auth.username(), wrk_id + '>'))
+    logging.debug('%s:servicing JSON GET sub-tree for <%s>'%(auth.username(), wrk_id))
     work_refreshFromdb()
     return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),wrk_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
@@ -1399,7 +1421,7 @@ def get_tree_person():
 @auth.login_required
 @cross_origin()
 def get_subtree_person(prs_id):
-    logging.debug('%s:servicing JSON GET person sub-tree for <'%(auth.username(), prs_id + '>'))
+    logging.debug('%s:servicing JSON GET sub-tree for <%s>'%(auth.username(), prs_id))
     person_refreshFromdb()
     return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),"all"),prs_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relations) below -----------------------------
@@ -1641,6 +1663,17 @@ def move_person(prs_id):
     else: return make_response(jsonify({'error': 'Not authorized'}), 401)
 #------------------------------------ person-person related selects -----------------------
 #  --------------------  all features allowed for normal users(view persons and relations) below -----------------------------
+@app.route(endpoint_prefix + 'subtree-person/<string:prs_id>', methods=['DELETE'])
+@auth.login_required
+@cross_origin()
+def person_remove_subtree(prs_id):
+    if get_role(auth.username()) in ['editor', 'admin']:
+        logging.debug('%s:servicing remove subtree %s' % (auth.username(), prs_id))
+        return jsonify({'result': person_delete_children(prs_id)})
+    else:
+        return make_response(jsonify({'error': 'Not authorized'}), 401)
+
+
 @app.route(endpoint_prefix + 'person-work-relations', methods=['GET'])
 @auth.login_required
 @cross_origin()
