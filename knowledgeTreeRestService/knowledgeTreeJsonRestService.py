@@ -8,6 +8,8 @@ import random, string
 from datetime import datetime
 import copy
 from flask_cors import CORS, cross_origin
+import yaml
+from yaml.loader import SafeLoader
 
 auth = flask_httpauth.HTTPBasicAuth()
 def ceasar(plain, shift):  # shift each letter by shift
@@ -17,12 +19,12 @@ def start(alphabet): # find distance between alphabet and 'a' or 'A'
             return strt
 @auth.get_password
 def get_password(username):
-    auths = json.load(open("credentials_roles.txt"))
+    auths = yaml.load(open("credentials_roles.yaml"), SafeLoader)
     if username in auths:
         return ceasar(auths[username]["pw"],10)
     return None
 def get_role(username):
-    auths = json.load(open("credentials_roles.txt"))
+    auths = yaml.load(open("credentials_roles.yaml"), SafeLoader)
     if username in auths:
         return auths[username]["role"]
     return None
@@ -736,6 +738,9 @@ logging.basicConfig(filename='knowledgeTreeJournal.log',format='%(asctime)s %(me
 
 app = Flask(__name__)
 
+root_node_names = yaml.load(open("root_node_names.yaml","r"), SafeLoader) # json.load(open("root_node_names.txt"))
+root_subject, root_work, root_person = root_node_names["subject"], root_node_names["work"], root_node_names["person"]
+
 db = ktm.database
 db.create_tables([ktm.Subject, ktm.SubjectSubjectRelation, ktm.SubjectRelatestoSubject, \
                   ktm.Work, ktm.WorkWorkRelation, ktm.WorkRelatestoWork, \
@@ -842,17 +847,17 @@ def get_tree():
     refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # t = nx.bfs_tree(g,"aum")
-    # treedata = json_graph.tree_data(t,"aum")
+    # t = nx.bfs_tree(g,root_subject)
+    # treedata = json_graph.tree_data(t,root_subject)
     # write json
-    return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),"aum")))
+    return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),root_subject),root_subject)))
 @app.route(endpoint_prefix + 'subtree/<string:sub_id>', methods=['GET'])
 @auth.login_required
 @cross_origin()
 def get_subtree(sub_id):
     logging.debug('%s:servicing JSON GET sub-tree for <%s>'%(auth.username(), sub_id))
     refreshFromdb()
-    return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),"aum"),sub_id)))
+    return jsonify(add_name_description(json_graph.tree_data(nx.bfs_tree(refreshGraph(),root_subject),sub_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
 @app.route(endpoint_prefix + 'subject-with-relation', methods=['POST'])
 @auth.login_required
@@ -1101,17 +1106,17 @@ def get_tree_work():
     work_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # t = nx.bfs_tree(g,"aum")
-    # treedata = json_graph.tree_data(t,"aum")
+    # t = nx.bfs_tree(g,root_subject)
+    # treedata = json_graph.tree_data(t,root_subject)
     # write json
-    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),"all")))
+    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),root_work),root_work)))
 @app.route(endpoint_prefix + 'subtree-work/<string:wrk_id>', methods=['GET'])
 @auth.login_required
 @cross_origin()
 def get_subtree_work(wrk_id):
     logging.debug('%s:servicing JSON GET sub-tree for <%s>'%(auth.username(), wrk_id))
     work_refreshFromdb()
-    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),"all"),wrk_id)))
+    return jsonify(work_add_name_description(json_graph.tree_data(nx.bfs_tree(work_refreshGraph(),root_work),wrk_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relatins) below -----------------------------
 @app.route(endpoint_prefix + 'work-with-relation', methods=['POST'])
 @auth.login_required
@@ -1413,17 +1418,17 @@ def get_tree_person():
     person_refreshFromdb()
     # g = refreshGraph()
     # write json formatted data
-    # t = nx.bfs_tree(g,"aum")
-    # treedata = json_graph.tree_data(t,"aum")
+    # t = nx.bfs_tree(g,root_subject)
+    # treedata = json_graph.tree_data(t,root_subject)
     # write json
-    return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),"all"),"all")))
+    return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),root_person),root_person)))
 @app.route(endpoint_prefix + 'subtree-person/<string:prs_id>', methods=['GET'])
 @auth.login_required
 @cross_origin()
 def get_subtree_person(prs_id):
     logging.debug('%s:servicing JSON GET sub-tree for <%s>'%(auth.username(), prs_id))
     person_refreshFromdb()
-    return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),"all"),prs_id)))
+    return jsonify(person_add_names(json_graph.tree_data(nx.bfs_tree(person_refreshGraph(),root_person),prs_id)))
 #  --------------------  all features allowed for editors (edit, create, remove subjects and relations) below -----------------------------
 @app.route(endpoint_prefix + 'person-with-relation', methods=['POST'])
 @auth.login_required

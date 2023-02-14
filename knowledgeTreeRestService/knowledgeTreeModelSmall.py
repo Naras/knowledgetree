@@ -1,43 +1,44 @@
 from peewee import *
-import json
+import json, yaml
+from yaml.loader import SafeLoader
 # import logging
 # import socket
 # logging.basicConfig(filename='knowledgeTreeDBJournal.log',format='%(asctime)s %(message)s',level=logging.DEBUG)
 
 def get_username():
-    dbcredentials = json.load(open("db_credentials.txt"))
+    dbcredentials = yaml.load(open("db_credentials.yaml"), SafeLoader)
     if 'user' in dbcredentials:
         return dbcredentials['user']
     return None
 def get_password():
-    dbcredentials = json.load(open("db_credentials.txt"))
+    dbcredentials = yaml.load(open("db_credentials.yaml"), SafeLoader)
     if 'user' in dbcredentials:
         return dbcredentials['password']
     return None
 def get_dbhost():
     try:
         # socket.gethostbyname(socket.gethostname())
-        hosturlfile = open('database_url.txt')
-        hosturl = hosturlfile.read()
-        hosturlfile.close()
-        return hosturl
-    except:
+        hosturl = yaml.load(open('database_url.yaml'), SafeLoader)
+        return hosturl['database_url']
+    except FileNotFoundError as e:
+        print("connection is to local database")
         return None
 
 database_url = get_dbhost()
 try:
-    localdb = open('localdb.txt')
-    dbname = localdb.readlines()
-    localdb.close()
-    dbname = dbname[0].split('=')[1]
+    localdb = yaml.load(open('localdb.yaml'), SafeLoader)
+    dbname = localdb['db']
+    print("connect to local db: %s"%dbname)
 except FileNotFoundError as e:
     dbname = 'knowledgetree'
+
+
 if database_url==None:
     # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
     database = MySQLDatabase(dbname, **{'user': get_username(), 'password': get_password()})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase(dbname, host=database_url, port=3306, user = get_username(), password=get_password())
+    database = MySQLDatabase(dbname, host=database_url, port=3306, user=get_username(), password=get_password())
 
 class UnknownField(object):
     pass

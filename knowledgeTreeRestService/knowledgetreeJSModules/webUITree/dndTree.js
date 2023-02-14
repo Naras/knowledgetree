@@ -21,6 +21,7 @@ var with_relation = "subject-with-relation";
 var subject_work_or_person = "subject";
 var currentValue = "subject";
 var dragdropDisabled = true;
+var dragStarted = null;
 
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -1199,36 +1200,29 @@ function draw_tree(error, treeData) {
 
     // color a node properly
     function colorNode(d) {
-        // result = "#fff";
-        /*        if (d.synthetic == true) {
-                    result = (d._children || d.children) ? "darkgray" : "lightgray";
-                } else {
-                    if (d.type == "USDA") {
-                        result = (d._children || d.children) ? "orangered" : "orange";
-                    } else if (d.type == "Produce") {
-                        result = (d._children || d.children) ? "yellowgreen" : "yellow";
-                    } else if (d.type == "RecipeIngredient") {
-                        result = (d._children || d.children) ? "skyblue" : "royalblue";
-                    } else {
-                        result = "lightsteelblue"
-                    }
-                }
-        */
         result = (d._children || d.children) ? "darkgray" : "white";
         return result;
     }
 
     function colorLink(d) {
-        console.log("link relation:", d.relation)
-        switch (d.relation) {
-            case "Anga":
-                result = "lightgray";
-                break;
-            case "Avayavi":
+        switch (d.target.relation) {
+            case "part":
                 result = "orange";
                 break;
+            case "Anga":
+                result = "cyan";
+                break;
+            case "Avayavi":
+                result = "lightpink";
+                break;
+            case "gurushishya":
+                result = "lightblue";
+                break;
+            case "Janya":
+                result = "lightseagreen";
+                break;
             default:
-                result = "black"
+                result = "lightgreen"
         }
         return result;
     }
@@ -1370,12 +1364,32 @@ function draw_tree(error, treeData) {
             .attr("transform", function(d) {
                 return "translate(" + source.y0 + "," + source.x0 + ")";
             })
-            .on('click', click);
+            .on('click', click)
+            .on("mouseover", function(d) {
+                var g = d3.select(this); // The node
+                // The class is used to remove the additional text later
+                var info = g.append('text')
+                   .classed('info', true)
+                   .attr('x', -200)
+                   .attr('y', 10)
+                   .text("relation " + d.relation);
+            })
+            .on("mouseout", function() {
+                // Remove the info text on mouse out.
+                d3.select(this).select('text.info').remove()
+              });
 
         nodeEnter.append("circle")
             .attr('class', 'nodeCircle')
             .attr("r", 0)
             .style("fill", colorNode);
+
+        nodeEnter.append("image")
+            .attr("xlink:href", function(d) {return d.children || d._children ? "icons8-branch-orange.png" : "icons8-leaf-fluttering-in-wind-48.png"})
+            .attr("x", "-12px")
+            .attr("y", "-12px")
+            .attr("width", "24px")
+            .attr("height", "24px");
 
         nodeEnter.append("text")
             .attr("x", function(d) {
@@ -1479,6 +1493,7 @@ function draw_tree(error, treeData) {
         // Enter any new links at the parent's previous position.
         link.enter().insert("path", "g")
             .attr("class", "link")
+            .style("stroke", colorLink)
             .attr("d", function(d) {
                 var o = {
                     x: source.x0,
