@@ -6,7 +6,7 @@ import random
 
 import networkx as nx
 from networkx.readwrite import json_graph
-restServiceUrl = open('knowledgetreeJSModules/restServiceUrl.csv')
+restServiceUrl = open('../knowledgetreeJSModules/restServiceUrl.csv')
 prefix = 'http://' + list(restServiceUrl.readlines())[1][:-1] + '/knowledgeTree/api/v1.0/'
 restServiceUrl.close()
 # echoservice = 'http://httpbin.org/post'

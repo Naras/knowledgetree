@@ -84,9 +84,10 @@
 </head>
 
 <body>
-    <!--<script type="text/javascript">
+    <script type="text/javascript">
         var userip;
-    </script>-->
+    </script>
+    <script type="text/javascript" src="https://l2.io/ip.js?var=userip"></script>
     <!--    <script type="text/javascript" src="https://l2.io/ip.js?var=userip"></script>-->
     <!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
     <script src="webUITree/d3.v3.min.js"></script>
@@ -99,9 +100,16 @@
             <br>
             <label><b>Password</b></label>
             <input type="password" id="psw" placeholder="Enter Password" name="psw" required>
+            <br>         
+            <label id="lblUrl"><b>URL</b></label>
+            <input type="text" id="url" placeholder="Enter URL" name="url"  value="127.0.0.1" disabled>
+            <!-- <input type="text" id="url" placeholder="Enter URL" name="url"  value=userip> -->
             <br>
-                
-            <!--<input type="checkbox" id="displayWorkTree" name="displayWorkTree"> Display Work Tree (uncheck for Display Subject Tree)-->
+            <label id="lblPort"><b>port</b></label>
+            <input type="text" id="port" placeholder="Enter port" name="port"  value="5001" disabled>
+            <br>    
+    
+            <input type="checkbox" id="localServer" name="localServer"  onclick='localServerClick(this);' checked> local Server
         </div>
         <input type="button" id="btnQueryString" value="Login" />
         <!-- not a submit button with action at a server. Parameters are to be passed to next form in a function below  -->
@@ -117,10 +125,35 @@
             });
         </script>
         <script type="text/javascript">
+            console.log("Your IP is :", userip);
+            if (userip.slice(0,2) == "12") document.getElementById("localServer").checked = true;
+            else  document.getElementById("localServer").checked = false;
+        </script>
+        <script>
+            function localServerClick(cb) {
+                if (cb.checked) {
+                        document.getElementById("url").value = "127.0.0.1";
+                        document.getElementById("port").value = "5001";
+                        // document.getElementById("url").style.visibility = 'visible';
+                        // document.getElementById("port").style.visibility = 'visible';
+                        // document.getElementById("lblUrl").style.visibility = 'visible';
+                        // document.getElementById("lblPort").style.visibility = 'visible';
+                } else {
+                        // console.log("remote");
+                        document.getElementById("url").value = "3.111.159.89";
+                        document.getElementById("port").value = "5000";
+                        // document.getElementById("url").style.visibility = 'hidden';
+                        // document.getElementById("port").style.visibility = 'hidden';
+                        // document.getElementById("lblUrl").style.visibility = 'hidden';
+                        // document.getElementById("lblPort").style.visibility = 'hidden';
+                }
+            }
+          </script>
+        <script type="text/javascript">
             "use strict";
             $(function() {
                 $("#btnQueryString").bind("click", function() {
-                    var localORRemote = "local";  // local or remote server
+                    var localORRemote = document.getElementById("localServer");  // local or remote server
                     var cipher = "";
                     var text = encodeURIComponent($("#psw").val());
                     var shift = 10;
@@ -134,8 +167,10 @@
                     var nam = encodeURIComponent($("#uname").val());
                     // var orientation = encodeURIComponent($("#orientation").val());
                     var landingpage = "webUITree/index.html";
-                    if (localORRemote == "local") {
-                        var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=127.0.0.1:5000";
+                    if (localORRemote.checked) {
+                        var urlInputText =  "127.0.0.1"  // document.getElementById("url").value;
+                        var portInputText = document.getElementById("port").value;
+                        var url = landingpage + "?name=" + nam + "&psw=" + cipher + "&userip=" + urlInputText + ":" + portInputText;
                         window.location.href = url; // local
                         console.log('url(local):', url)
                     } else {

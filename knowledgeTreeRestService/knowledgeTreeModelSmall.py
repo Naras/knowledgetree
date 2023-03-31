@@ -5,16 +5,11 @@ from yaml.loader import SafeLoader
 # import socket
 # logging.basicConfig(filename='knowledgeTreeDBJournal.log',format='%(asctime)s %(message)s',level=logging.DEBUG)
 
-def get_username():
+def get_username_password():
     dbcredentials = yaml.load(open("db_credentials.yaml"), SafeLoader)
     if 'user' in dbcredentials:
-        return dbcredentials['user']
-    return None
-def get_password():
-    dbcredentials = yaml.load(open("db_credentials.yaml"), SafeLoader)
-    if 'user' in dbcredentials:
-        return dbcredentials['password']
-    return None
+        return dbcredentials['user'], dbcredentials['password']
+    return None, None
 def get_dbhost():
     try:
         # socket.gethostbyname(socket.gethostname())
@@ -32,13 +27,13 @@ try:
 except FileNotFoundError as e:
     dbname = 'knowledgetree'
 
-
+username, password = get_username_password()
 if database_url==None:
     # logging.debug('local access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase(dbname, **{'user': get_username(), 'password': get_password()})
+    database = MySQLDatabase(dbname, **{'user': username, 'password': password})
 else:
     # logging.debug('remote access.db user:'+ get_username()+' db password:' + get_password());
-    database = MySQLDatabase(dbname, host=database_url, port=3306, user=get_username(), password=get_password())
+    database = MySQLDatabase(dbname, host=database_url, port=3306, user=username, password=password)
 
 class UnknownField(object):
     pass
